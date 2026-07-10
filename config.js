@@ -3,7 +3,7 @@
 //  Ganti API_KEY dengan key asli dari synoxcloud.xyz
 // ============================================================
 const CONFIG = {
-    API_KEY: 'ganti_dengan_api_key_anda', // <-- ISI DENGAN API KEY ANDA
+    API_KEY: 'https://api.synoxcloud.xyz', // <-- ISI DENGAN API KEY ANDA
 
     ENDPOINTS: {
         tiktok:   'https://api.synoxcloud.xyz/download/tiktok',
