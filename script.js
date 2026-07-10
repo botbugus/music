@@ -102,7 +102,7 @@
     });
 
     // ============================================================
-    //  RENDER HASIL — FLEKSIBEL UNTUK SEMUA RESPONSE
+    //  RENDER HASIL — KHUSUS UNTUK SPOTIFY & SEMUA FITUR
     // ============================================================
     function renderResult(data) {
         placeholder.style.display = 'none';
@@ -135,7 +135,7 @@
 
         let html = '';
 
-        // ---- Tampilkan peringatan jika error ----
+        // ---- Tampilkan peringatan jika error (khusus Spotify) ----
         if (isError) {
             html += `
                 <div style="background:rgba(255,200,50,0.06); border:1px solid rgba(255,200,50,0.1); border-radius:14px; padding:1rem; margin-bottom:1rem;">
@@ -144,20 +144,22 @@
                         <span style="font-weight:500;">${errorMsg || 'Gagal mendapatkan link download'}</span>
                     </div>
                     <div style="margin-top:0.4rem; color:#8a9aaf; font-size:0.8rem;">
-                        ${currentFeature === 'spotify' ? 'Spotify mungkin memerlukan API key premium atau link tidak mendukung download.' : ''}
+                        ${currentFeature === 'spotify' ? 'Spotify memerlukan API key premium untuk mendapatkan link download. Hubungi @lordsaurus untuk mendapatkan key.' : ''}
                         ${currentFeature === 'instagram' ? 'Instagram mungkin memerlukan API key premium atau link tidak valid.' : ''}
+                        ${currentFeature === 'tiktok' ? 'Pastikan link TikTok benar dan bisa diakses publik.' : ''}
+                        ${currentFeature === 'youtube' ? 'Pastikan link YouTube benar dan bisa diakses publik.' : ''}
                     </div>
                 </div>
             `;
         }
 
-        // ---- Tampilkan metadata ----
+        // ---- Tampilkan metadata (judul, artis) ----
         html += `<div class="meta">
             <div><strong>Judul</strong> ${title}</div>
             <div><strong>Kreator</strong> ${author}</div>
         </div>`;
 
-        // ---- Tampilkan thumbnail ----
+        // ---- Tampilkan thumbnail (cover) ----
         if (thumbnail && thumbnail !== '') {
             html += `<img class="thumbnail" src="${thumbnail}" alt="thumbnail" loading="lazy" onerror="this.style.display='none'">`;
         }
@@ -183,7 +185,7 @@
             // Jika tidak ada link dan bukan error, tampilkan info
             html += `<div style="color:#7a8aa8; margin-top:0.6rem; padding:0.8rem; background:rgba(255,255,255,0.02); border-radius:12px;">
                 Tidak ada tautan download tersedia. 
-                ${currentFeature === 'spotify' ? 'Coba gunakan link lagu yang berbeda atau pastikan API key aktif.' : ''}
+                ${currentFeature === 'spotify' ? 'Coba gunakan link lagu yang berbeda atau pastikan API key premium aktif.' : ''}
                 ${currentFeature === 'instagram' ? 'Pastikan link Reels/Postingan benar dan publik.' : ''}
             </div>`;
         }
@@ -193,9 +195,26 @@
             html += `<div style="margin-top:0.8rem; color:#8aa0c0; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.04); padding-top:0.6rem;">${d.description || d.caption}</div>`;
         }
 
-        // ---- Tampilkan raw input (untuk debugging) ----
+        // ---- Tampilkan raw input URL (untuk debugging) ----
         if (d.input) {
             html += `<div style="margin-top:0.8rem; color:#5a6f8f; font-size:0.65rem; border-top:1px solid rgba(255,255,255,0.03); padding-top:0.5rem; word-break:break-all;">🔗 ${d.input}</div>`;
+        }
+
+        // ---- Jika Spotify dan error, tampilkan cara mendapatkan API key ----
+        if (currentFeature === 'spotify' && isError) {
+            html += `
+                <div style="margin-top:1rem; padding:1rem; background:rgba(30,144,255,0.04); border:1px solid rgba(30,144,255,0.06); border-radius:14px;">
+                    <div style="display:flex; align-items:center; gap:10px; color:#7ac7ff;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="#7ac7ff" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                        <span style="font-weight:500;">Butuh API Key Premium?</span>
+                    </div>
+                    <div style="margin-top:0.4rem; color:#8a9aaf; font-size:0.8rem; line-height:1.6;">
+                        Spotify download memerlukan API key premium dari Synox Cloud.<br>
+                        Hubungi <strong style="color:#d4e0f5;">@lordsaurus</strong> di Telegram untuk mendapatkan key permanen (Rp15.000 sekali bayar).<br>
+                        Setelah punya key, masukkan di <code style="background:rgba(255,255,255,0.04); padding:0.1rem 0.4rem; border-radius:4px; color:#90b4f0;">config.js</code> pada variabel <code style="background:rgba(255,255,255,0.04); padding:0.1rem 0.4rem; border-radius:4px; color:#90b4f0;">API_KEY</code>.
+                    </div>
+                </div>
+            `;
         }
 
         resultContent.innerHTML = html;
@@ -275,10 +294,11 @@
 
             const json = await response.json();
 
-            // ---- Cek status (termasuk status false dengan pesan) ----
+            // ---- Cek status (termasuk status false dengan data result) ----
+            // Spotify sering mengembalikan status: false tapi tetap ada data result
             if (json.status === true || json.statusCode === 200 || json.success === true) {
                 renderResult(json);
-            } else if (json.status === false && json.result && json.result.message) {
+            } else if (json.status === false && json.result) {
                 // Kasus Spotify: status false tapi ada data result
                 renderResult(json);
             } else {
