@@ -1,290 +1,458 @@
+// ===== RANDA AI - MAIN APPLICATION =====
 (function() {
     'use strict';
 
-    // ===== DRAWER CONTROL =====
-    const burger = document.getElementById('burgerBtn');
-    const overlay = document.getElementById('drawerOverlay');
-    const drawer = document.getElementById('drawer');
-    const closeBtn = document.getElementById('drawerCloseBtn');
+    // ========================================
+    // 1. DOM REFERENCE & STATE
+    // ========================================
+    const DOM = {
+        burgerBtn: document.getElementById('burgerBtn'),
+        drawer: document.getElementById('drawer'),
+        overlay: document.getElementById('drawerOverlay'),
+        closeBtn: document.getElementById('drawerCloseBtn'),
+        menuItems: document.querySelectorAll('.drawer-menu-item'),
+        chatMessages: document.getElementById('chatMessages'),
+        promptInput: document.getElementById('promptInput'),
+        sendBtn: document.getElementById('sendBtn'),
+        particles: document.getElementById('particles')
+    };
 
-    function openDrawer() {
-        overlay.classList.add('open');
-        drawer.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
+    const STATE = {
+        isGenerating: false,
+        currentFeature: 'image',
+        messageCount: 0
+    };
 
-    function closeDrawer() {
-        overlay.classList.remove('open');
-        drawer.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-
-    burger.addEventListener('click', openDrawer);
-    closeBtn.addEventListener('click', closeDrawer);
-    overlay.addEventListener('click', closeDrawer);
-
-    // ===== FITUR SWITCH =====
-    let currentFeature = 'tiktok';
-    const urlInput = document.getElementById('urlInput');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const placeholder = document.getElementById('placeholder');
-    const resultContent = document.getElementById('resultContent');
-
-    // Event listener untuk drawer menu
-    document.querySelectorAll('.drawer-menu-item').forEach(el => {
-        el.addEventListener('click', function() {
-            const feature = this.dataset.feature;
-            setActiveFeature(feature);
-        });
-    });
-
-    // Event listener untuk feature cards
-    document.querySelectorAll('.feature-card').forEach(el => {
-        el.addEventListener('click', function() {
-            const feature = this.dataset.feature;
-            setActiveFeature(feature);
-        });
-    });
-
-    function setActiveFeature(feature) {
-        currentFeature = feature;
-
-        // Update drawer menu
-        document.querySelectorAll('.drawer-menu-item').forEach(el => {
-            el.classList.toggle('active', el.dataset.feature === feature);
-        });
-
-        // Update feature cards
-        document.querySelectorAll('.feature-card').forEach(el => {
-            el.classList.toggle('active', el.dataset.feature === feature);
-        });
-
-        // Update placeholder URL
-        const example = CONFIG.EXAMPLES[feature] || '';
-        const labels = {
-            tiktok: 'https://vt.tiktok.com/ZSXe89SB8/',
-            youtube: 'https://youtu.be/nNcWorl87h0',
-            instagram: 'https://www.instagram.com/reel/DZZdzQzxPRM',
-            spotify: 'https://open.spotify.com/track/2sULdMKWdBdK2ZtntuFvSb'
-        };
-        urlInput.placeholder = labels[feature] || 'Masukkan URL...';
-        if (!urlInput.value || urlInput.value === CONFIG.EXAMPLES[Object.keys(CONFIG.EXAMPLES).find(k => k !== feature)]) {
-            urlInput.value = example;
-        }
-
-        // Reset result
-        placeholder.style.display = 'flex';
-        resultContent.style.display = 'none';
-        placeholder.innerHTML = `
-            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-            <span>Masukkan URL ${feature} dan klik Ambil</span>
-        `;
-
-        closeDrawer();
-    }
-
-    // ===== RENDER HASIL =====
-    function renderResult(data) {
-        placeholder.style.display = 'none';
-        resultContent.style.display = 'block';
-
-        if (!data) {
-            resultContent.innerHTML = `<span style="color:#f28b82;">⚠️ Data kosong atau tidak valid.</span>`;
-            return;
-        }
-
-        // Ambil data dari berbagai kemungkinan struktur
-        let d = data.data || data.result || data;
-        if (Array.isArray(d)) d = d[0] || {};
-
-        // Cek error
-        const errorMsg = d.message || d.error || d.msg || '';
-        const isError = data.status === false || data.success === false || (errorMsg && errorMsg.toLowerCase().includes('gagal'));
-
-        const title = d.title || d.name || d.judul || 'Tanpa judul';
-        const author = d.author || d.artist || d.creator || d.publisher || 'Tidak diketahui';
-        const thumbnail = d.thumbnail || d.cover || d.thumb || d.picture || '';
-        let links = d.links || d.download || d.url || d.urls || [];
-
-        if (typeof links === 'string') links = [links];
-        if (!Array.isArray(links)) links = [];
-        links = links.filter(l => l && l !== '/');
-
-        let html = '';
-
-        // Tampilkan peringatan jika error
-        if (isError) {
-            html += `
-                <div style="background:rgba(255,200,50,0.06); border:1px solid rgba(255,200,50,0.1); border-radius:14px; padding:1rem; margin-bottom:1rem;">
-                    <div style="display:flex; align-items:center; gap:10px; color:#f0c050;">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#f0c050" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <span style="font-weight:500;">${errorMsg || 'Gagal mendapatkan link download'}</span>
-                    </div>
-                    <div style="margin-top:0.4rem; color:#8a9aaf; font-size:0.8rem;">
-                        ${currentFeature === 'spotify' ? 'Spotify memerlukan API key premium. Hubungi @lordsaurus untuk mendapatkan key.' : ''}
-                        ${currentFeature === 'instagram' ? 'Pastikan link Reels/Postingan benar dan publik.' : ''}
-                        ${currentFeature === 'tiktok' ? 'Pastikan link TikTok benar dan bisa diakses publik.' : ''}
-                        ${currentFeature === 'youtube' ? 'Pastikan link YouTube benar dan bisa diakses publik.' : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Metadata
-        html += `<div class="meta">
-            <div><strong>Judul</strong> ${title}</div>
-            <div><strong>Kreator</strong> ${author}</div>
-        </div>`;
-
-        // Thumbnail
-        if (thumbnail && thumbnail !== '') {
-            html += `<img class="thumbnail" src="${thumbnail}" alt="thumbnail" loading="lazy" onerror="this.style.display='none'">`;
-        }
-
-        // Link download
-        if (links.length > 0) {
-            html += `<div class="link-list">`;
-            links.forEach((link, idx) => {
-                let label = `Tautan ${idx+1}`;
-                if (typeof link === 'string') {
-                    if (link.includes('play.google.com')) label = '📱 Google Play';
-                    else if (link.includes('rapidcdn') || link.includes('.mp4') || link.includes('.mp3') || link.includes('.m4a')) label = '⬇️ Download';
-                    else if (link.includes('youtube.com') || link.includes('youtu.be')) label = '▶️ Tonton';
-                    else if (link.includes('open.spotify.com')) label = '🎵 Buka Spotify';
-                }
-                html += `<a href="${link}" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    ${label}
-                </a>`;
-            });
-            html += `</div>`;
-        } else if (!isError) {
-            html += `<div style="color:#7a8aa8; margin-top:0.6rem; padding:0.8rem; background:rgba(255,255,255,0.02); border-radius:12px;">
-                Tidak ada tautan download tersedia.
-                ${currentFeature === 'spotify' ? 'Coba gunakan link lagu yang berbeda atau pastikan API key premium aktif.' : ''}
-            </div>`;
-        }
-
-        // Tampilkan input URL
-        if (d.input) {
-            html += `<div style="margin-top:0.8rem; color:#5a6f8f; font-size:0.65rem; border-top:1px solid rgba(255,255,255,0.03); padding-top:0.5rem; word-break:break-all;">🔗 ${d.input}</div>`;
-        }
-
-        // Tips Spotify
-        if (currentFeature === 'spotify' && isError) {
-            html += `
-                <div style="margin-top:1rem; padding:1rem; background:rgba(30,144,255,0.04); border:1px solid rgba(30,144,255,0.06); border-radius:14px;">
-                    <div style="display:flex; align-items:center; gap:10px; color:#7ac7ff;">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="#7ac7ff" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                        <span style="font-weight:500;">Butuh API Key Premium?</span>
-                    </div>
-                    <div style="margin-top:0.4rem; color:#8a9aaf; font-size:0.8rem; line-height:1.6;">
-                        Spotify download memerlukan API key premium dari Synox Cloud.<br>
-                        Hubungi <strong style="color:#d4e0f5;">@lordsaurus</strong> di Telegram untuk mendapatkan key permanen (Rp15.000 sekali bayar).<br>
-                        Setelah punya key, masukkan di <code style="background:rgba(255,255,255,0.04); padding:0.1rem 0.4rem; border-radius:4px; color:#90b4f0;">config.js</code> pada variabel <code style="background:rgba(255,255,255,0.04); padding:0.1rem 0.4rem; border-radius:4px; color:#90b4f0;">API_KEY</code>.
-                    </div>
-                </div>
-            `;
-        }
-
-        resultContent.innerHTML = html;
-    }
-
-    // ===== FETCH DATA =====
-    async function fetchData() {
-        let rawUrl = urlInput.value.trim();
-        if (!rawUrl) {
-            placeholder.style.display = 'flex';
-            resultContent.style.display = 'none';
-            placeholder.innerHTML = `
-                <div style="color:#f28b82; display:flex; gap:10px; align-items:center;">
-                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="#f28b82" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span>Masukkan URL terlebih dahulu.</span>
-                </div>
-            `;
-            return;
-        }
-
-        const endpoint = CONFIG.ENDPOINTS[currentFeature];
-        if (!endpoint) {
-            placeholder.style.display = 'flex';
-            resultContent.style.display = 'none';
-            placeholder.innerHTML = `<span style="color:#f28b82;">⚠️ Fitur ${currentFeature} belum didukung.</span>`;
-            return;
-        }
-
-        const encoded = encodeURIComponent(rawUrl);
-        let fullUrl = `${CONFIG.BASE_URL}${endpoint}?url=${encoded}`;
-
-        if (CONFIG.USE_CORS_PROXY) {
-            fullUrl = `${CONFIG.CORS_PROXY_URL}${encodeURIComponent(fullUrl)}`;
-        }
-
-        // Loader
-        placeholder.style.display = 'flex';
-        resultContent.style.display = 'none';
-        placeholder.innerHTML = `
-            <div class="loader">
-                <svg class="spinner-svg" viewBox="0 0 24 24"><path d="M12 2v4M12 22v-4M4 12H2M22 12h-2M19.07 4.93l-2.83 2.83M6.34 17.66l-2.83 2.83M17.66 6.34l2.83-2.83M4.93 19.07l2.83-2.83"/></svg>
-                <span>Memproses · Randa</span>
-            </div>
-        `;
-
-        try {
-            const headers = { 'Accept': 'application/json' };
-            if (CONFIG.API_KEY && CONFIG.API_KEY.length > 0) {
-                headers['X-API-Key'] = CONFIG.API_KEY;
-            }
-
-            const response = await fetch(fullUrl, { method: 'GET', headers: headers });
-
-            if (!response.ok) {
-                let errorMsg = `HTTP ${response.status}`;
-                try {
-                    const errData = await response.json();
-                    errorMsg = errData.message || errData.error || errorMsg;
-                } catch (_) {}
-                throw new Error(errorMsg);
-            }
-
-            const json = await response.json();
-
-            // Cek status — termasuk status false dengan data result (Spotify)
-            if (json.status === true || json.statusCode === 200 || json.success === true) {
-                renderResult(json);
-            } else if (json.status === false && json.result) {
-                // Kasus Spotify: status false tapi ada data result
-                renderResult(json);
+    // ========================================
+    // 2. DRAWER CONTROLS
+    // ========================================
+    const DrawerController = {
+        open() {
+            DOM.drawer.classList.add('open');
+            DOM.overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        },
+        close() {
+            DOM.drawer.classList.remove('open');
+            DOM.overlay.classList.remove('open');
+            document.body.style.overflow = '';
+        },
+        toggle() {
+            if (DOM.drawer.classList.contains('open')) {
+                this.close();
             } else {
-                throw new Error(json.message || json.error || 'API merespons dengan status gagal');
+                this.open();
+            }
+        }
+    };
+
+    // ========================================
+    // 3. PARTICLE SYSTEM
+    // ========================================
+    const ParticleSystem = {
+        init(count = 40) {
+            const container = DOM.particles;
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.width = (Math.random() * 3 + 1) + 'px';
+                p.style.height = p.style.width;
+                p.style.animationDuration = (Math.random() * 20 + 15) + 's';
+                p.style.animationDelay = (Math.random() * 20) + 's';
+                p.style.opacity = Math.random() * 0.4 + 0.05;
+                container.appendChild(p);
+            }
+        }
+    };
+
+    // ========================================
+    // 4. JSON SYNTAX HIGHLIGHTER
+    // ========================================
+    const JSONHighlighter = {
+        formatJSON(jsonStr) {
+            let result = '';
+            const lines = jsonStr.split('\n');
+            for (let line of lines) {
+                let formattedLine = '';
+                let inString = false;
+                let i = 0;
+                
+                while (i < line.length) {
+                    const char = line[i];
+                    
+                    // Handle string
+                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+                        inString = !inString;
+                        if (inString) {
+                            formattedLine += `<span class="json-string">"`;
+                        } else {
+                            formattedLine += `"</span>`;
+                        }
+                        i++;
+                        continue;
+                    }
+                    
+                    if (inString) {
+                        formattedLine += char;
+                        i++;
+                        continue;
+                    }
+                    
+                    // Handle brackets
+                    if (char === '{' || char === '}' || char === '[' || char === ']') {
+                        formattedLine += `<span class="json-bracket">${char}</span>`;
+                        i++;
+                        continue;
+                    }
+                    
+                    // Handle colon
+                    if (char === ':') {
+                        formattedLine += `<span class="json-colon">:</span>`;
+                        i++;
+                        continue;
+                    }
+                    
+                    // Handle comma
+                    if (char === ',') {
+                        formattedLine += `<span class="json-comma">,</span>`;
+                        i++;
+                        continue;
+                    }
+                    
+                    // Handle key detection (word before colon)
+                    if (char === '"') {
+                        let keyStart = i;
+                        let keyEnd = line.indexOf('"', i + 1);
+                        if (keyEnd !== -1 && line[keyEnd + 1] === ':') {
+                            const key = line.substring(i, keyEnd + 1);
+                            formattedLine += `<span class="json-key">${key}</span>`;
+                            i = keyEnd + 1;
+                            continue;
+                        }
+                    }
+                    
+                    // Handle boolean and null
+                    const wordMatch = line.substring(i).match(/^(true|false|null)\b/);
+                    if (wordMatch) {
+                        const word = wordMatch[0];
+                        const cls = word === 'null' ? 'json-null' : 'json-boolean';
+                        formattedLine += `<span class="${cls}">${word}</span>`;
+                        i += word.length;
+                        continue;
+                    }
+                    
+                    // Handle number
+                    const numMatch = line.substring(i).match(/^(\d+\.?\d*)/);
+                    if (numMatch) {
+                        formattedLine += `<span class="json-number">${numMatch[0]}</span>`;
+                        i += numMatch[0].length;
+                        continue;
+                    }
+                    
+                    formattedLine += char;
+                    i++;
+                }
+                
+                result += formattedLine + '\n';
+            }
+            return result;
+        },
+        
+        detectAndFormat(text) {
+            // Try to parse entire text as JSON
+            try {
+                const parsed = JSON.parse(text);
+                const formatted = JSON.stringify(parsed, null, 2);
+                return `<div class="json-block">${this.formatJSON(formatted)}</div>`;
+            } catch (e) {
+                // Try to find JSON block in text
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    try {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        const formatted = JSON.stringify(parsed, null, 2);
+                        const before = text.substring(0, jsonMatch.index);
+                        const after = text.substring(jsonMatch.index + jsonMatch[0].length);
+                        return `${before}<div class="json-block">${this.formatJSON(formatted)}</div>${after}`;
+                    } catch (e2) {
+                        return text;
+                    }
+                }
+                return text;
+            }
+        }
+    };
+
+    // ========================================
+    // 5. MESSAGE SYSTEM
+    // ========================================
+    const MessageSystem = {
+        add(type, content, options = {}) {
+            const { isImage = false, imageUrl = null, prompt = null } = options;
+            
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.dataset.messageId = ++STATE.messageCount;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+
+            if (type === 'user') {
+                bubble.textContent = content;
+            } else if (isImage && imageUrl) {
+                bubble.innerHTML = `
+                    ${prompt ? `<div style="margin-bottom:0.4rem; color:#8ab4f0; font-size:0.8rem;"><strong>Prompt:</strong> ${prompt}</div>` : ''}
+                    <img src="${imageUrl}" alt="${prompt || 'Gambar'}" loading="lazy" />
+                    <div class="download-links">
+                        <a href="${imageUrl}" target="_blank" download>
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download
+                        </a>
+                        <a href="${imageUrl}" target="_blank">
+                            <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            View
+                        </a>
+                    </div>
+                `;
+            } else {
+                const formattedContent = JSONHighlighter.detectAndFormat(content);
+                bubble.innerHTML = formattedContent;
             }
 
-        } catch (err) {
-            placeholder.style.display = 'flex';
-            resultContent.style.display = 'none';
+            const time = document.createElement('div');
+            time.className = 'time';
+            time.textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-            let errorMessage = err.message;
-            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-                errorMessage = 'Gagal terhubung ke API. Coba aktifkan USE_CORS_PROXY = true di config.js';
-            }
+            div.appendChild(bubble);
+            div.appendChild(time);
+            DOM.chatMessages.appendChild(div);
+            
+            this.scrollToBottom();
+        },
 
-            placeholder.innerHTML = `
-                <div style="color:#f28b82; display:flex; gap:10px; align-items:center;">
-                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="#f28b82" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span>Gagal: ${errorMessage}</span>
+        showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message bot';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="bubble">
+                    <div class="typing-indicator"><span></span><span></span><span></span></div>
                 </div>
             `;
-            console.warn('[Randa] fetch error:', err);
+            DOM.chatMessages.appendChild(div);
+            this.scrollToBottom();
+        },
+
+        hideTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        },
+
+        scrollToBottom() {
+            setTimeout(() => {
+                DOM.chatMessages.scrollTop = DOM.chatMessages.scrollHeight;
+            }, 50);
+        },
+
+        clear() {
+            DOM.chatMessages.innerHTML = '';
+        },
+
+        showWelcome(type) {
+            this.clear();
+            if (type === 'image') {
+                DOM.chatMessages.innerHTML = `
+                    <div class="welcome-message">
+                        <span class="big-icon">🖼️</span>
+                        <h3>Randa AI Image Generator</h3>
+                        <p>Kirim prompt teks, dapatkan gambar</p>
+                        <p style="font-size:0.75rem; color:#3a5a7a; margin-top:0.3rem;">Contoh: "kucing lucu pakai topi"</p>
+                    </div>
+                `;
+            } else {
+                DOM.chatMessages.innerHTML = `
+                    <div class="welcome-message">
+                        <span class="big-icon">💬</span>
+                        <h3>Randa AI Chat Bot</h3>
+                        <p>Tanya apapun, dapatkan jawaban dari AI</p>
+                        <p style="font-size:0.75rem; color:#3a5a7a; margin-top:0.3rem;">Contoh: "tampilkan JSON data user"</p>
+                    </div>
+                `;
+            }
+        },
+
+        showComingSoon(title) {
+            this.clear();
+            DOM.chatMessages.innerHTML = `
+                <div style="text-align:center; padding:3rem 1rem; color:#4a5b78; margin:auto 0;">
+                    <span style="font-size:3.5rem; display:block; margin-bottom:0.8rem;">🚧</span>
+                    <h3 style="color:#c8ddf5; font-weight:400;">${title}</h3>
+                    <p style="color:#5a7a9a;">Fitur ini sedang dalam pengembangan</p>
+                    <p style="font-size:0.75rem; color:#3a4a5f; margin-top:0.3rem;">Coming soon</p>
+                </div>
+            `;
         }
-    }
+    };
 
-    // ===== EVENT BINDING =====
-    fetchBtn.addEventListener('click', fetchData);
-    urlInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') fetchData();
+    // ========================================
+    // 6. API SERVICES
+    // ========================================
+    const APIService = {
+        async generateImage(prompt) {
+            const encoded = encodeURIComponent(prompt);
+            const response = await fetch(`https://api.synoxcloud.xyz/ai-generate/text-2-image?prompt=${encoded}&ratio=1%3A1`);
+            return response.json();
+        },
+
+        async chatBot(prompt) {
+            const encoded = encodeURIComponent(prompt);
+            const response = await fetch(`https://api.synoxcloud.xyz/ai-chat/claude-opus-4.8?pesan=${encoded}`);
+            return response.json();
+        }
+    };
+
+    // ========================================
+    // 7. MAIN APPLICATION LOGIC
+    // ========================================
+    const App = {
+        async handleSend() {
+            const text = DOM.promptInput.value.trim();
+            
+            if (STATE.isGenerating) return;
+            
+            if (!text) {
+                MessageSystem.add('bot', '⚠️ Masukkan teks terlebih dahulu.');
+                return;
+            }
+
+            STATE.isGenerating = true;
+            DOM.sendBtn.disabled = true;
+
+            // Remove welcome message if exists
+            const welcome = DOM.chatMessages.querySelector('.welcome-message');
+            if (welcome) welcome.remove();
+
+            // Show user message
+            MessageSystem.add('user', text);
+            MessageSystem.showTyping();
+
+            try {
+                let result;
+                if (STATE.currentFeature === 'image') {
+                    result = await APIService.generateImage(text);
+                    MessageSystem.hideTyping();
+                    
+                    if (result.status && result.data && result.data.url) {
+                        MessageSystem.add('bot', '', {
+                            isImage: true,
+                            imageUrl: result.data.url,
+                            prompt: result.data.prompt || text
+                        });
+                    } else {
+                        MessageSystem.add('bot', '❌ Gagal generate gambar. Coba lagi.');
+                    }
+                } else if (STATE.currentFeature === 'chat') {
+                    result = await APIService.chatBot(text);
+                    MessageSystem.hideTyping();
+                    
+                    if (result.status && result.result && result.result.reply) {
+                        MessageSystem.add('bot', result.result.reply);
+                    } else {
+                        MessageSystem.add('bot', '❌ Gagal mendapatkan jawaban. Coba lagi.');
+                    }
+                }
+            } catch (error) {
+                MessageSystem.hideTyping();
+                MessageSystem.add('bot', `❌ Error: ${error.message}`);
+            } finally {
+                STATE.isGenerating = false;
+                DOM.sendBtn.disabled = false;
+                DOM.promptInput.value = '';
+                DOM.promptInput.focus();
+            }
+        },
+
+        switchFeature(feature) {
+            if (feature === 'comingsoon') {
+                MessageSystem.showComingSoon('Remove Background');
+                DOM.promptInput.placeholder = 'Fitur belum tersedia...';
+                DOM.promptInput.disabled = true;
+                DOM.sendBtn.disabled = true;
+                DrawerController.close();
+                return;
+            }
+
+            // Update menu
+            DOM.menuItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.feature === feature);
+            });
+
+            STATE.currentFeature = feature;
+
+            if (feature === 'image') {
+                MessageSystem.showWelcome('image');
+                DOM.promptInput.placeholder = 'Tulis prompt gambar...';
+                DOM.promptInput.disabled = false;
+                DOM.sendBtn.disabled = false;
+            } else if (feature === 'chat') {
+                MessageSystem.showWelcome('chat');
+                DOM.promptInput.placeholder = 'Tulis pertanyaan...';
+                DOM.promptInput.disabled = false;
+                DOM.sendBtn.disabled = false;
+            }
+
+            DrawerController.close();
+        },
+
+        init() {
+            // ===== EVENT: Burger Button =====
+            DOM.burgerBtn.addEventListener('click', DrawerController.open);
+
+            // ===== EVENT: Close Button =====
+            DOM.closeBtn.addEventListener('click', DrawerController.close);
+
+            // ===== EVENT: Overlay =====
+            DOM.overlay.addEventListener('click', DrawerController.close);
+
+            // ===== EVENT: Send Button =====
+            DOM.sendBtn.addEventListener('click', () => this.handleSend());
+
+            // ===== EVENT: Enter Key =====
+            DOM.promptInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.handleSend();
+                }
+            });
+
+            // ===== EVENT: Menu Items =====
+            DOM.menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    this.switchFeature(item.dataset.feature);
+                });
+            });
+
+            // ===== INIT: Particles =====
+            ParticleSystem.init(35);
+
+            // ===== INIT: Welcome =====
+            MessageSystem.showWelcome('image');
+
+            console.log('✅ Randa AI ready');
+            console.log('📌 Features:', {
+                image: 'AI Image Generator',
+                chat: 'AI Chat Bot (Claude)'
+            });
+        }
+    };
+
+    // ========================================
+    // 8. START APPLICATION
+    // ========================================
+    document.addEventListener('DOMContentLoaded', () => {
+        App.init();
     });
-
-    // ===== INISIALISASI =====
-    setActiveFeature('tiktok');
 
 })();

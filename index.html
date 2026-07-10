@@ -1,132 +1,78 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>Randa · Downloader</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Randa · AI Image Generator</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- OVERLAY DRAWER -->
-<div class="drawer-overlay" id="drawerOverlay"></div>
+    <!-- PARTICLE BACKGROUND -->
+    <div class="particles" id="particles"></div>
 
-<!-- DRAWER -->
-<div class="drawer" id="drawer">
-  <div class="drawer-header">
-    <h2>⌘ Menu</h2>
-    <button class="drawer-close" id="drawerCloseBtn">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="drawer-menu">
-    <div class="drawer-menu-item active" data-feature="tiktok">
-      <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
-      <span>TikTok</span>
-    </div>
-    <div class="drawer-menu-item" data-feature="youtube">
-      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-      <span>YouTube</span>
-    </div>
-    <div class="drawer-menu-item" data-feature="instagram">
-      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
-      <span>Instagram</span>
-    </div>
-    <div class="drawer-menu-item" data-feature="spotify">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5-2 4-2 4 2 4 2"/><path d="M10 11s1-1.5 2-1.5 2 1.5 2 1.5"/></svg>
-      <span>Spotify</span>
-    </div>
-  </div>
-  <div class="drawer-footer">v2.0 · Randa core</div>
-</div>
+    <!-- OVERLAY DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
 
-<!-- NAVBAR STICKY DI ATAS -->
-<nav class="navbar">
-  <button class="burger-btn" id="burgerBtn">
-    <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-  </button>
-  <div class="marquee-wrap">
-    <span class="marquee-text">✦ Website Downloader By Putra X OxCorner ✦ Website Downloader By Putra X OxCorner ✦</span>
-  </div>
-  <div class="nav-status">
-    <div class="dot-pulse"></div>
-    <span>online</span>
-  </div>
-</nav>
-
-<!-- PANEL UTAMA -->
-<div class="core-panel">
-
-  <!-- FITUR GRID -->
-  <div class="feature-area">
-    <div class="feature-grid">
-      <div class="feature-card active" data-feature="tiktok">
-        <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
-        <h4>TikTok</h4>
-        <p>Unduh video tanpa watermark</p>
-        <span class="badge-dummy">● aktif</span>
-      </div>
-      <div class="feature-card" data-feature="youtube">
-        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-        <h4>YouTube</h4>
-        <p>Download video & audio</p>
-        <span class="badge-dummy">○ siap</span>
-      </div>
-      <div class="feature-card" data-feature="instagram">
-        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
-        <h4>Instagram</h4>
-        <p>Reels, foto, & stories</p>
-        <span class="badge-dummy">○ siap</span>
-      </div>
-      <div class="feature-card" data-feature="spotify">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5-2 4-2 4 2 4 2"/><path d="M10 11s1-1.5 2-1.5 2 1.5 2 1.5"/></svg>
-        <h4>Spotify</h4>
-        <p>Download lagu & playlist</p>
-        <span class="badge-dummy">○ siap</span>
-      </div>
+    <!-- DRAWER -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <h2>Menu</h2>
+            <button class="drawer-close" id="drawerCloseBtn">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="drawer-menu">
+            <div class="drawer-menu-item active" data-feature="image">
+                <span class="menu-icon">🎨</span>
+                <span>Image Generator</span>
+                <span class="menu-badge">active</span>
+            </div>
+            <div class="drawer-menu-item" data-feature="chat">
+                <span class="menu-icon">💬</span>
+                <span>Chat Bot</span>
+                <span class="menu-badge">active</span>
+            </div>
+            <div class="drawer-menu-item" data-feature="removebg">
+                <span class="menu-icon">🧹</span>
+                <span>Remove Background</span>
+                <span class="menu-badge">soon</span>
+            </div>
+        </div>
+        <div class="drawer-footer">⚡ Randa core v2.0</div>
     </div>
-  </div>
 
-  <!-- DOWNLOADER -->
-  <div class="downloader-section">
-    <div class="input-group">
-      <div class="input-row">
-        <input type="text" id="urlInput" placeholder="https://vt.tiktok.com/ZSXe89SB8/" value="https://vt.tiktok.com/ZSXe89SB8/">
-        <button id="fetchBtn">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-          Ambil
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <button class="burger-btn" id="burgerBtn">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
         </button>
-      </div>
-    </div>
-  </div>
+        <div class="marquee-wrap">
+            <span class="marquee-text">✦ Randa AI · Generate image from text prompt ✦ Randa AI · Generate image from text prompt ✦</span>
+        </div>
+        <div class="nav-status">
+            <div class="dot-pulse"></div>
+            <span>online</span>
+        </div>
+    </nav>
 
-  <!-- HASIL -->
-  <div class="result-box" id="resultBox">
-    <div class="result-placeholder" id="placeholder">
-      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-      <span>Hasil akan tampil di sini</span>
-    </div>
-    <div id="resultContent" class="result-content"></div>
-  </div>
+    <!-- PANEL UTAMA -->
+    <div class="core-panel" id="corePanel">
+        <div class="chat-messages" id="chatMessages"></div>
 
-  <!-- MOVING VISUAL -->
-  <div class="moving-visual">
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-      <span>secure</span>
+        <div class="chat-input-area">
+            <div class="chat-input-row">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><circle cx="9" cy="9" r="2"/><path d="M22 14l-4-4-6 6-4-4-6 6"/></svg>
+                </div>
+                <input type="text" id="promptInput" placeholder="Tulis prompt gambar..." />
+                <button id="sendBtn">
+                    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
     </div>
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 3"/></svg>
-      <span>real-time</span>
-    </div>
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      <span>core</span>
-    </div>
-  </div>
-</div>
 
-<script src="config.js"></script>
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
