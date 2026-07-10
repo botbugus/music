@@ -1,5 +1,5 @@
 // ============================================================
-//  LOGIKA UTAMA — Fix CORS & Download
+//  LOGIKA UTAMA — Fix Render untuk Semua Fitur
 // ============================================================
 (function() {
     'use strict';
@@ -70,18 +70,15 @@
             el.classList.toggle('active', el.dataset.feature === feature);
         });
 
-        // Update header
         featureTitle.textContent = `▸ ${featureNames[feature] || feature}`;
         document.querySelector('.feature-sub').textContent = featureSubs[feature] || '';
 
-        // Update placeholder
         const example = CONFIG.EXAMPLES[feature] || '';
         urlInput.placeholder = `Tempelkan URL ${feature}...`;
         if (!urlInput.value || urlInput.value === CONFIG.EXAMPLES[Object.keys(CONFIG.EXAMPLES).find(k => k !== feature)]) {
             urlInput.value = example;
         }
 
-        // Reset result
         placeholder.style.display = 'flex';
         resultContent.style.display = 'none';
         placeholder.innerHTML = `
@@ -104,7 +101,9 @@
         el.addEventListener('click', () => setActiveFeature(el.dataset.feature));
     });
 
-    // ---- render hasil ----
+    // ============================================================
+    //  RENDER HASIL — FLEKSIBEL UNTUK SEMUA RESPONSE
+    // ============================================================
     function renderResult(data) {
         placeholder.style.display = 'none';
         resultContent.style.display = 'block';
@@ -114,10 +113,15 @@
             return;
         }
 
-        // Coba berbagai kemungkinan struktur response
+        // ---- Ambil data dari berbagai kemungkinan struktur ----
         let d = data.data || data.result || data;
         if (Array.isArray(d)) d = d[0] || {};
 
+        // ---- Cek apakah ada pesan error/gagal ----
+        const errorMsg = d.message || d.error || d.msg || '';
+        const isError = data.status === false || data.success === false || (errorMsg && errorMsg.toLowerCase().includes('gagal'));
+
+        // ---- Ekstrak informasi ----
         const title = d.title || d.name || d.judul || 'Tanpa judul';
         const author = d.author || d.artist || d.creator || d.publisher || 'Tidak diketahui';
         const thumbnail = d.thumbnail || d.cover || d.thumb || d.picture || '';
@@ -129,15 +133,36 @@
         // Filter link kosong
         links = links.filter(l => l && l !== '/');
 
-        let html = `<div class="meta">
+        let html = '';
+
+        // ---- Tampilkan peringatan jika error ----
+        if (isError) {
+            html += `
+                <div style="background:rgba(255,200,50,0.06); border:1px solid rgba(255,200,50,0.1); border-radius:14px; padding:1rem; margin-bottom:1rem;">
+                    <div style="display:flex; align-items:center; gap:10px; color:#f0c050;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#f0c050" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span style="font-weight:500;">${errorMsg || 'Gagal mendapatkan link download'}</span>
+                    </div>
+                    <div style="margin-top:0.4rem; color:#8a9aaf; font-size:0.8rem;">
+                        ${currentFeature === 'spotify' ? 'Spotify mungkin memerlukan API key premium atau link tidak mendukung download.' : ''}
+                        ${currentFeature === 'instagram' ? 'Instagram mungkin memerlukan API key premium atau link tidak valid.' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---- Tampilkan metadata ----
+        html += `<div class="meta">
             <div><strong>Judul</strong> ${title}</div>
             <div><strong>Kreator</strong> ${author}</div>
         </div>`;
 
+        // ---- Tampilkan thumbnail ----
         if (thumbnail && thumbnail !== '') {
             html += `<img class="thumbnail" src="${thumbnail}" alt="thumbnail" loading="lazy" onerror="this.style.display='none'">`;
         }
 
+        // ---- Tampilkan link download (jika ada) ----
         if (links.length > 0) {
             html += `<div class="link-list">`;
             links.forEach((link, idx) => {
@@ -154,23 +179,38 @@
                 </a>`;
             });
             html += `</div>`;
-        } else {
-            html += `<div style="color:#7a8aa8; margin-top:0.6rem; padding:0.8rem; background:rgba(255,255,255,0.02); border-radius:12px;">Tidak ada tautan download tersedia. Mungkin video ini dilindungi atau URL tidak valid.</div>`;
+        } else if (!isError) {
+            // Jika tidak ada link dan bukan error, tampilkan info
+            html += `<div style="color:#7a8aa8; margin-top:0.6rem; padding:0.8rem; background:rgba(255,255,255,0.02); border-radius:12px;">
+                Tidak ada tautan download tersedia. 
+                ${currentFeature === 'spotify' ? 'Coba gunakan link lagu yang berbeda atau pastikan API key aktif.' : ''}
+                ${currentFeature === 'instagram' ? 'Pastikan link Reels/Postingan benar dan publik.' : ''}
+            </div>`;
         }
 
+        // ---- Tampilkan deskripsi tambahan ----
         if (d.description || d.caption) {
             html += `<div style="margin-top:0.8rem; color:#8aa0c0; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.04); padding-top:0.6rem;">${d.description || d.caption}</div>`;
         }
 
+        // ---- Tampilkan raw input (untuk debugging) ----
+        if (d.input) {
+            html += `<div style="margin-top:0.8rem; color:#5a6f8f; font-size:0.65rem; border-top:1px solid rgba(255,255,255,0.03); padding-top:0.5rem; word-break:break-all;">🔗 ${d.input}</div>`;
+        }
+
         resultContent.innerHTML = html;
 
-        // Increment download counter
-        downloadCount++;
-        localStorage.setItem('randa_downloads', downloadCount);
-        updateStats();
+        // Increment download counter (hanya jika sukses)
+        if (!isError && links.length > 0) {
+            downloadCount++;
+            localStorage.setItem('randa_downloads', downloadCount);
+            updateStats();
+        }
     }
 
-    // ---- fetch data ----
+    // ============================================================
+    //  FETCH DATA
+    // ============================================================
     async function fetchData() {
         const rawUrl = urlInput.value.trim();
         if (!rawUrl) {
@@ -196,7 +236,6 @@
         const encoded = encodeURIComponent(rawUrl);
         let fullUrl = `${CONFIG.BASE_URL}${endpoint}?url=${encoded}`;
 
-        // Gunakan CORS proxy jika diperlukan
         if (CONFIG.USE_CORS_PROXY) {
             fullUrl = `${CONFIG.CORS_PROXY_URL}${encodeURIComponent(fullUrl)}`;
         }
@@ -236,8 +275,11 @@
 
             const json = await response.json();
 
-            // Cek status sukses
+            // ---- Cek status (termasuk status false dengan pesan) ----
             if (json.status === true || json.statusCode === 200 || json.success === true) {
+                renderResult(json);
+            } else if (json.status === false && json.result && json.result.message) {
+                // Kasus Spotify: status false tapi ada data result
                 renderResult(json);
             } else {
                 throw new Error(json.message || json.error || 'API merespons dengan status gagal');
@@ -282,7 +324,7 @@
     setActiveFeature('tiktok');
     updateStats();
 
-    // ---- generate particles ----
+    // ---- particles ----
     (function createParticles() {
         const container = document.getElementById('particles');
         for (let i = 0; i < 40; i++) {
