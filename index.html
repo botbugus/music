@@ -1,829 +1,132 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>Randa · Downloader</title>
-  <style>
-    /* reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: #0b0d15;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      padding: 0;
-      margin: 0;
-      background-image: radial-gradient(circle at 20% 30%, #1a1f2e 0%, #07090f 90%);
-      padding-top: 80px; /* ruang untuk navbar sticky */
-    }
-
-    /* ========== NAVBAR STICKY DI ATAS ========== */
-    .navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      background: rgba(10, 14, 26, 0.92);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    .burger-btn {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 0.45rem 0.6rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-      flex-shrink: 0;
-    }
-
-    .burger-btn:hover {
-      background: rgba(255, 255, 255, 0.07);
-      border-color: rgba(255, 255, 255, 0.12);
-    }
-
-    .burger-btn svg {
-      width: 24px;
-      height: 24px;
-      stroke: #b8cef0;
-      stroke-width: 2;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .marquee-wrap {
-      flex: 1;
-      overflow: hidden;
-      white-space: nowrap;
-      background: rgba(0, 180, 255, 0.03);
-      border-radius: 60px;
-      padding: 0.3rem 0.8rem;
-      border: 1px solid rgba(0, 180, 255, 0.04);
-    }
-
-    .marquee-text {
-      display: inline-block;
-      font-size: 0.9rem;
-      font-weight: 450;
-      color: #c8dbfa;
-      letter-spacing: 0.3px;
-      animation: scrollMarquee 16s linear infinite;
-      padding-right: 2rem;
-    }
-
-    @keyframes scrollMarquee {
-      0% { transform: translateX(0%); }
-      100% { transform: translateX(-100%); }
-    }
-
-    .marquee-wrap:hover .marquee-text {
-      animation-play-state: paused;
-    }
-
-    .nav-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(0, 255, 200, 0.05);
-      padding: 0.2rem 0.9rem 0.2rem 0.6rem;
-      border-radius: 60px;
-      border: 1px solid rgba(0, 255, 200, 0.08);
-      flex-shrink: 0;
-    }
-
-    .dot-pulse {
-      width: 8px;
-      height: 8px;
-      background: #2effc0;
-      border-radius: 50%;
-      box-shadow: 0 0 12px #2effc080;
-      animation: pulse-dot 2.2s infinite ease-in-out;
-    }
-
-    @keyframes pulse-dot {
-      0% { opacity: 0.4; transform: scale(0.85); }
-      50% { opacity: 1; transform: scale(1.25); }
-      100% { opacity: 0.4; transform: scale(0.85); }
-    }
-
-    .nav-status span {
-      font-size: 0.6rem;
-      font-weight: 400;
-      color: #8fcfd0;
-      text-transform: uppercase;
-    }
-
-    /* ========== PANEL UTAMA ========== */
-    .core-panel {
-      max-width: 860px;
-      width: 100%;
-      margin: 0 auto;
-      background: rgba(18, 22, 33, 0.75);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-radius: 2.5rem 2.5rem 2rem 2rem;
-      padding: 1.8rem 2rem 2rem;
-      box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-    }
-
-    /* ========== DRAWER ========== */
-    .drawer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
-      z-index: 999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.25s ease, visibility 0.25s ease;
-    }
-
-    .drawer-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 290px;
-      max-width: 78vw;
-      height: 100%;
-      background: rgba(14, 18, 30, 0.97);
-      backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(255, 255, 255, 0.04);
-      z-index: 1000;
-      padding: 2rem 1.5rem 1.5rem;
-      transform: translateX(-100%);
-      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-      box-shadow: 8px 0 40px rgba(0,0,0,0.6);
-    }
-
-    .drawer.open {
-      transform: translateX(0%);
-    }
-
-    .drawer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      padding-bottom: 0.8rem;
-    }
-
-    .drawer-header h2 {
-      font-size: 1.1rem;
-      font-weight: 450;
-      color: #d4e2fc;
-      letter-spacing: 0.3px;
-    }
-
-    .drawer-close {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0.2rem;
-    }
-
-    .drawer-close svg {
-      width: 28px;
-      height: 28px;
-      stroke: #8aa0c8;
-      stroke-width: 2;
-      fill: none;
-    }
-
-    .drawer-menu {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-top: 0.2rem;
-    }
-
-    .drawer-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 0.8rem 1rem;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.01);
-      border: 1px solid transparent;
-      transition: 0.15s;
-      cursor: default;
-      color: #b0c4e6;
-      font-size: 0.95rem;
-    }
-
-    .drawer-menu-item.active {
-      background: rgba(0, 180, 255, 0.08);
-      border-color: rgba(0, 180, 255, 0.15);
-      color: #d4e6ff;
-    }
-
-    .drawer-menu-item svg {
-      width: 22px;
-      height: 22px;
-      stroke: #8aaac8;
-      stroke-width: 1.8;
-      fill: none;
-      flex-shrink: 0;
-    }
-
-    .drawer-menu-item.active svg {
-      stroke: #7ac7ff;
-    }
-
-    .drawer-footer {
-      margin-top: auto;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.03);
-      font-size: 0.7rem;
-      color: #5a6f8f;
-    }
-
-    /* ========== FITUR AREA ========== */
-    .feature-area {
-      margin-top: 0.25rem;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.8rem;
-    }
-
-    .feature-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      border-radius: 20px;
-      padding: 1.2rem 1rem;
-      text-align: center;
-      transition: 0.2s;
-      cursor: default;
-    }
-
-    .feature-card:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .feature-card svg {
-      width: 36px;
-      height: 36px;
-      stroke: #7a9ec8;
-      stroke-width: 1.6;
-      fill: none;
-      margin-bottom: 0.5rem;
-    }
-
-    .feature-card h4 {
-      color: #d4e0f5;
-      font-weight: 450;
-      font-size: 0.9rem;
-      margin-bottom: 0.2rem;
-    }
-
-    .feature-card p {
-      color: #6a7f9f;
-      font-size: 0.75rem;
-      font-weight: 350;
-    }
-
-    .feature-card .badge-dummy {
-      display: inline-block;
-      margin-top: 0.4rem;
-      background: rgba(0, 180, 255, 0.06);
-      padding: 0.15rem 0.8rem;
-      border-radius: 60px;
-      font-size: 0.6rem;
-      color: #6a9fc8;
-      border: 1px solid rgba(0, 180, 255, 0.06);
-    }
-
-    /* ========== DOWNLOADER AREA ========== */
-    .downloader-section {
-      margin-top: 0.5rem;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .input-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.7rem;
-      background: rgba(0, 0, 0, 0.35);
-      border-radius: 80px;
-      padding: 0.25rem 0.25rem 0.25rem 1.4rem;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(4px);
-      transition: 0.2s;
-    }
-
-    .input-row:focus-within {
-      border-color: rgba(80, 180, 255, 0.3);
-      box-shadow: 0 0 0 3px rgba(0, 140, 255, 0.05);
-    }
-
-    .input-row input {
-      flex: 1 1 200px;
-      background: transparent;
-      border: none;
-      padding: 0.9rem 0.2rem 0.9rem 0;
-      font-size: 0.95rem;
-      color: #eef3fe;
-      outline: none;
-      min-width: 140px;
-      font-family: inherit;
-    }
-
-    .input-row input::placeholder {
-      color: #64748b;
-      font-weight: 350;
-    }
-
-    .input-row button {
-      background: linear-gradient(145deg, #1e90ff, #0070e0);
-      border: none;
-      padding: 0.7rem 1.8rem;
-      border-radius: 60px;
-      font-weight: 500;
-      color: white;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 6px 18px #0070e040;
-      border: 1px solid #3a9eff60;
-      letter-spacing: 0.3px;
-      white-space: nowrap;
-    }
-
-    .input-row button:hover {
-      background: linear-gradient(145deg, #3a9eff, #1a7ae0);
-      transform: scale(1.01);
-      box-shadow: 0 8px 24px #0070e060;
-    }
-
-    .input-row button:active {
-      transform: scale(0.97);
-    }
-
-    .input-row button svg {
-      width: 18px;
-      height: 18px;
-      stroke: white;
-      stroke-width: 2;
-      fill: none;
-    }
-
-    .result-box {
-      margin-top: 1.8rem;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 28px;
-      padding: 1.2rem 1.5rem 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      min-height: 90px;
-      transition: 0.2s;
-    }
-
-    .result-placeholder {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: #5e6f8a;
-      font-size: 0.9rem;
-      font-weight: 350;
-    }
-
-    .result-placeholder svg {
-      width: 28px;
-      height: 28px;
-      stroke: #4a5b78;
-      stroke-width: 1.4;
-      fill: none;
-      opacity: 0.5;
-    }
-
-    .result-content {
-      color: #d4e0f5;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      word-break: break-word;
-      display: none;
-    }
-
-    .result-content .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem 2rem;
-      margin-bottom: 0.8rem;
-      padding-bottom: 0.6rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .result-content .meta strong {
-      color: #90b4f0;
-      font-weight: 450;
-      margin-right: 0.3rem;
-    }
-
-    .result-content .thumbnail {
-      max-width: 100%;
-      border-radius: 18px;
-      margin: 0.8rem 0 0.6rem;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      box-shadow: 0 10px 30px -12px #00000080;
-      max-height: 260px;
-      object-fit: cover;
-      width: auto;
-    }
-
-    .link-list {
-      margin-top: 0.8rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .link-list a {
-      background: rgba(0, 160, 255, 0.08);
-      padding: 0.3rem 1rem;
-      border-radius: 60px;
-      font-size: 0.8rem;
-      color: #8fcbff;
-      text-decoration: none;
-      border: 1px solid rgba(0, 160, 255, 0.08);
-      transition: 0.15s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .link-list a:hover {
-      background: rgba(0, 160, 255, 0.15);
-      border-color: rgba(0, 160, 255, 0.2);
-    }
-
-    .link-list a svg {
-      width: 14px;
-      height: 14px;
-      stroke: #8fcbff;
-      stroke-width: 2;
-      fill: none;
-    }
-
-    .loader {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: #90b4f0;
-    }
-
-    .spinner-svg {
-      animation: spin 1.2s linear infinite;
-      width: 28px;
-      height: 28px;
-      stroke: #3a9eff;
-      stroke-width: 2.5;
-      fill: none;
-    }
-
-    @keyframes spin {
-      100% { transform: rotate(360deg); }
-    }
-
-    /* moving visual */
-    .moving-visual {
-      margin-top: 1.8rem;
-      display: flex;
-      justify-content: center;
-      gap: 1.2rem;
-      flex-wrap: wrap;
-      pointer-events: none;
-    }
-
-    .motion-icon {
-      animation: float-y 4.5s ease-in-out infinite alternate;
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: 40px;
-      padding: 0.3rem 1rem 0.3rem 0.8rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.02);
-      backdrop-filter: blur(4px);
-    }
-
-    .motion-icon svg {
-      width: 30px;
-      height: 30px;
-      stroke: #6d8fcb;
-      stroke-width: 1.6;
-      fill: none;
-    }
-
-    .motion-icon span {
-      font-size: 0.7rem;
-      color: #6f86b0;
-      letter-spacing: 0.2px;
-    }
-
-    @keyframes float-y {
-      0% { transform: translateY(0px) scale(1); }
-      100% { transform: translateY(-12px) scale(1.02); }
-    }
-
-    .motion-icon:nth-child(2) { animation-delay: 1.2s; }
-    .motion-icon:nth-child(3) { animation-delay: 2.4s; }
-
-    @media (max-width: 600px) {
-      body { padding-top: 70px; }
-      .navbar { padding: 0.5rem 1rem; }
-      .core-panel { padding: 1.2rem 1rem 1.5rem; border-radius: 1.8rem; }
-      .input-row { border-radius: 40px; padding-left: 1rem; }
-      .input-row button { padding: 0.6rem 1.2rem; font-size: 0.8rem; }
-      .marquee-text { font-size: 0.75rem; }
-      .drawer { width: 260px; padding: 1.5rem 1rem; }
-      .feature-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Randa · Downloader</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- OVERLAY DRAWER -->
-<div class="drawer-overlay" id="drawerOverlay"></div>
+    <!-- OVERLAY DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
 
-<!-- DRAWER -->
-<div class="drawer" id="drawer">
-  <div class="drawer-header">
-    <h2>⌘ Menu</h2>
-    <button class="drawer-close" id="drawerCloseBtn">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="drawer-menu">
-    <div class="drawer-menu-item active" id="menuDownloader">
-      <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
-      <span>Downloader TikTok</span>
-    </div>
-    <div class="drawer-menu-item">
-      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-      <span>Downloader YouTube</span>
-    </div>
-    <div class="drawer-menu-item">
-      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
-      <span>Downloader Instagram</span>
-    </div>
-    <div class="drawer-menu-item">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <span>Downloader Facebook</span>
-    </div>
-  </div>
-  <div class="drawer-footer">v1.0 · Randa core</div>
-</div>
-
-<!-- NAVBAR STICKY DI ATAS -->
-<nav class="navbar">
-  <!-- Burger -->
-  <button class="burger-btn" id="burgerBtn">
-    <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-  </button>
-
-  <!-- Marquee -->
-  <div class="marquee-wrap">
-    <span class="marquee-text">✦ Website Downloader By Putra X OxCorner ✦ Website Downloader By Putra X OxCorner ✦</span>
-  </div>
-
-  <!-- Status -->
-  <div class="nav-status">
-    <div class="dot-pulse"></div>
-    <span>online</span>
-  </div>
-</nav>
-
-<!-- PANEL UTAMA -->
-<div class="core-panel">
-
-  <!-- FITUR GRID (contoh struktur) -->
-  <div class="feature-area">
-    <div class="feature-grid">
-      <div class="feature-card">
-        <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
-        <h4>TikTok</h4>
-        <p>Unduh video tanpa watermark</p>
-        <span class="badge-dummy">● aktif</span>
-      </div>
-      <div class="feature-card">
-        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-        <h4>YouTube</h4>
-        <p>Download video & audio</p>
-        <span class="badge-dummy">○ segera</span>
-      </div>
-      <div class="feature-card">
-        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
-        <h4>Instagram</h4>
-        <p>Reels, foto, & stories</p>
-        <span class="badge-dummy">○ segera</span>
-      </div>
-      <div class="feature-card">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <h4>Facebook</h4>
-        <p>Video & live replay</p>
-        <span class="badge-dummy">○ segera</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- DOWNLOADER TIKTOK (aktif) -->
-  <div class="downloader-section">
-    <div class="input-group">
-      <div class="input-row">
-        <input type="text" id="tiktokUrl" placeholder="https://vt.tiktok.com/ZSXe89SB8/" value="https://vt.tiktok.com/ZSXe89SB8/">
-        <button id="fetchBtn">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-          Ambil
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- HASIL -->
-  <div class="result-box" id="resultBox">
-    <div class="result-placeholder" id="placeholder">
-      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
-      <span>Hasil akan tampil di sini</span>
-    </div>
-    <div id="resultContent" class="result-content"></div>
-  </div>
-
-  <!-- MOVING VISUAL -->
-  <div class="moving-visual">
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-      <span>secure</span>
-    </div>
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 3"/></svg>
-      <span>real-time</span>
-    </div>
-    <div class="motion-icon">
-      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      <span>core</span>
-    </div>
-  </div>
-</div>
-
-<script>
-  (function() {
-    // ===== DRAWER CONTROL =====
-    const burger = document.getElementById('burgerBtn');
-    const overlay = document.getElementById('drawerOverlay');
-    const drawer = document.getElementById('drawer');
-    const closeBtn = document.getElementById('drawerCloseBtn');
-
-    function openDrawer() {
-      overlay.classList.add('open');
-      drawer.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeDrawer() {
-      overlay.classList.remove('open');
-      drawer.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    burger.addEventListener('click', openDrawer);
-    closeBtn.addEventListener('click', closeDrawer);
-    overlay.addEventListener('click', closeDrawer);
-
-    // ===== TIKTOK DOWNLOADER (fungsi tetap, API key dihapus) =====
-    // Catatan: API key sekarang harus dimasukkan oleh user atau diambil dari environment.
-    // Untuk demo, kita gunakan endpoint tanpa key (atau user bisa menambahkan sendiri)
-    const BASE_URL = 'https://api.synoxcloud.xyz/download/tiktok';
-    const urlInput = document.getElementById('tiktokUrl');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const placeholder = document.getElementById('placeholder');
-    const resultContent = document.getElementById('resultContent');
-
-    function renderResult(data) {
-      placeholder.style.display = 'none';
-      resultContent.style.display = 'block';
-
-      if (!data || !data.data) {
-        resultContent.innerHTML = `<span style="color:#f28b82;">⚠️ Data tidak lengkap atau terjadi kesalahan.</span>`;
-        return;
-      }
-
-      const d = data.data;
-      const title = d.title || 'Tanpa judul';
-      const author = d.author || 'Tidak diketahui';
-      const thumbnail = d.thumbnail || '';
-      const links = d.links || [];
-
-      let html = `<div class="meta">
-        <div><strong>Judul</strong> ${title}</div>
-        <div><strong>Kreator</strong> ${author}</div>
-      </div>`;
-
-      if (thumbnail) {
-        html += `<img class="thumbnail" src="${thumbnail}" alt="thumbnail" loading="lazy" onerror="this.style.display='none'">`;
-      }
-
-      if (links.length > 0) {
-        html += `<div class="link-list">`;
-        links.forEach((link, idx) => {
-          if (link === '/') return;
-          const label = link.includes('play.google.com') ? 'Google Play' : 
-                        link.includes('rapidcdn') ? 'Unduh video' : `Tautan ${idx+1}`;
-          html += `<a href="${link}" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            ${label}
-          </a>`;
-        });
-        html += `</div>`;
-      } else {
-        html += `<div style="color:#7a8aa8; margin-top:0.6rem;">Tidak ada tautan tersedia.</div>`;
-      }
-
-      resultContent.innerHTML = html;
-    }
-
-    async function fetchTikTok() {
-      let rawUrl = urlInput.value.trim();
-      if (!rawUrl) {
-        rawUrl = 'https://vt.tiktok.com/ZSXe89SB8/';
-        urlInput.value = rawUrl;
-      }
-
-      const encoded = encodeURIComponent(rawUrl);
-      const endpoint = `${BASE_URL}?url=${encoded}`;
-
-      placeholder.style.display = 'block';
-      resultContent.style.display = 'none';
-      placeholder.innerHTML = `
-        <div class="loader">
-          <svg class="spinner-svg" viewBox="0 0 24 24"><path d="M12 2v4M12 22v-4M4 12H2M22 12h-2M19.07 4.93l-2.83 2.83M6.34 17.66l-2.83 2.83M17.66 6.34l2.83-2.83M4.93 19.07l2.83-2.83"/></svg>
-          <span>Memproses · Randa</span>
+    <!-- DRAWER -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <h2>⌘ Menu</h2>
+            <button class="drawer-close" id="drawerCloseBtn">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
         </div>
-      `;
+        <div class="drawer-menu">
+            <div class="drawer-menu-item active" data-feature="tiktok">
+                <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
+                <span>TikTok</span>
+            </div>
+            <div class="drawer-menu-item" data-feature="youtube">
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
+                <span>YouTube</span>
+            </div>
+            <div class="drawer-menu-item" data-feature="instagram">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
+                <span>Instagram</span>
+            </div>
+            <div class="drawer-menu-item" data-feature="spotify">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5-2 4-2 4 2 4 2"/><path d="M10 11s1-1.5 2-1.5 2 1.5 2 1.5"/></svg>
+                <span>Spotify</span>
+            </div>
+        </div>
+        <div class="drawer-footer">v1.0 · Randa core</div>
+    </div>
 
-      try {
-        const response = await fetch(endpoint, {
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const json = await response.json();
-        if (json.status === true || json.statusCode === 200) {
-          renderResult(json);
-        } else {
-          throw new Error(json.message || 'Status tidak ok');
-        }
-      } catch (err) {
-        placeholder.style.display = 'block';
-        resultContent.style.display = 'none';
-        placeholder.innerHTML = `
-          <div style="color:#f28b82; display:flex; gap:10px; align-items:center;">
-            <svg viewBox="0 0 24 24" width="28" height="28" stroke="#f28b82" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Gagal: ${err.message}</span>
-          </div>
-        `;
-      }
-    }
+    <!-- NAVBAR STICKY -->
+    <nav class="navbar">
+        <button class="burger-btn" id="burgerBtn">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+        <div class="marquee-wrap">
+            <span class="marquee-text">✦ Website Downloader By Putra X OxCorner ✦ Website Downloader By Putra X OxCorner ✦</span>
+        </div>
+        <div class="nav-status">
+            <div class="dot-pulse"></div>
+            <span>online</span>
+        </div>
+    </nav>
 
-    fetchBtn.addEventListener('click', fetchTikTok);
-    urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchTikTok(); });
-  })();
-</script>
+    <!-- PANEL UTAMA -->
+    <div class="core-panel">
+
+        <!-- FITUR GRID -->
+        <div class="feature-area">
+            <div class="feature-grid">
+                <div class="feature-card active" data-feature="tiktok">
+                    <svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 1.5.78c.98.28 2.04.3 2.04.3v2.7s-1.14-.12-2.04-.54c-.9-.42-1.5-1.2-1.5-1.2v5.4a4.8 4.8 0 0 1-4.8 4.8 4.8 4.8 0 0 1-3.48-1.5 4.8 4.8 0 0 1 2.28-8.34c.48-.12.96-.06 1.44.12v2.94a2.4 2.4 0 1 0 1.68 2.28V2h2.88s-.06 2.04.96 3.82z"/></svg>
+                    <h4>TikTok</h4>
+                    <p>Unduh video tanpa watermark</p>
+                    <span class="badge-dummy">● aktif</span>
+                </div>
+                <div class="feature-card" data-feature="youtube">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
+                    <h4>YouTube</h4>
+                    <p>Download video & audio</p>
+                    <span class="badge-dummy">○ siap</span>
+                </div>
+                <div class="feature-card" data-feature="instagram">
+                    <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
+                    <h4>Instagram</h4>
+                    <p>Reels, foto, & stories</p>
+                    <span class="badge-dummy">○ siap</span>
+                </div>
+                <div class="feature-card" data-feature="spotify">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5-2 4-2 4 2 4 2"/><path d="M10 11s1-1.5 2-1.5 2 1.5 2 1.5"/></svg>
+                    <h4>Spotify</h4>
+                    <p>Download lagu & playlist</p>
+                    <span class="badge-dummy">○ siap</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOWNLOADER AREA -->
+        <div class="downloader-section">
+            <div class="input-group">
+                <div class="input-row">
+                    <input type="text" id="urlInput" placeholder="Masukkan URL..." />
+                    <button id="fetchBtn">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                        Ambil
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HASIL -->
+        <div class="result-box" id="resultBox">
+            <div class="result-placeholder" id="placeholder">
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
+                <span>Hasil akan tampil di sini</span>
+            </div>
+            <div id="resultContent" class="result-content"></div>
+        </div>
+
+        <!-- MOVING VISUAL -->
+        <div class="moving-visual">
+            <div class="motion-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                <span>secure</span>
+            </div>
+            <div class="motion-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v5l3 3"/></svg>
+                <span>real-time</span>
+            </div>
+            <div class="motion-icon">
+                <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span>core</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
 </body>
-  </html>
+</html>
