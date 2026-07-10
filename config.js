@@ -1,24 +1,22 @@
 // ============================================================
-//  KONFIGURASI API SYNOX CLOUD
-//  Ganti API_KEY dengan key permanen dari @lordsaurus
-//  (Rp15.000 sekali bayar, atau gunakan tanpa key untuk API gratis)
+//  KONFIGURASI API SYNOX CLOUD//  Gunakan endpoint yang benar dari dokumentasi
 // ============================================================
 const CONFIG = {
-    // Jika tidak punya API key, kosongkan saja (gunakan "")
-    // Beberapa endpoint mungkin tetap jalan tanpa key
-    API_KEY: '',  // <-- ISI DENGAN API KEY ANDA (atau biarkan kosong)
+    // API Key — kosongkan jika tidak punya (beberapa endpoint gratis)
+    API_KEY: '',  // Isi dengan key permanen jika punya
 
     // Base URL API
     BASE_URL: 'https://api.synoxcloud.xyz',
 
+    // Endpoint download — PASTIKAN PATH NYA BENAR
     ENDPOINTS: {
         tiktok:    '/download/tiktok',
-        youtube:   '/download/youtube',
+        youtube:   '/download/youtube', 
         instagram: '/download/instagram',
         spotify:   '/download/spotify'
     },
 
-    // Contoh URL untuk setiap fitur (placeholder)
+    // Contoh URL untuk setiap fitur
     EXAMPLES: {
         tiktok:    'https://vt.tiktok.com/ZSXe89SB8/',
         youtube:   'https://youtu.be/nNcWorl87h0?si=NTtbJukOHENSn_9W',
@@ -26,8 +24,7 @@ const CONFIG = {
         spotify:   'https://open.spotify.com/track/xxxx'
     },
 
-    // Opsi CORS — jika fetch gagal, coba gunakan mode 'no-cors' (terbatas)
-    // atau gunakan proxy CORS seperti https://corsproxy.io/
-    USE_CORS_PROXY: false,  // set true jika perlu proxy
+    // CORS Proxy — AKTIFKAN jika fetch gagal
+    USE_CORS_PROXY: true,  // <-- SET true jika masih failed to fetch
     CORS_PROXY_URL: 'https://api.allorigins.win/raw?url='
 };
