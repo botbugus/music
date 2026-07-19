@@ -1,9 +1,11 @@
 (function() {
-  // --- Cek apakah berada di halaman fitur (ada elemen poster) ---
+  // --- Cek apakah berada di halaman fitur ---
   const poster = document.getElementById('poster');
   if (!poster) return;
 
-  // --- Elemen ---
+  // ============================================
+  // ELEMEN
+  // ============================================
   const productDisplay = document.getElementById('productNameDisplay');
   const addressDisplay = document.getElementById('addressDisplay');
   const priceDisplay = document.getElementById('priceDisplay');
@@ -18,10 +20,8 @@
   const fileInput = document.getElementById('bgFileInput');
   const resetBgBtn = document.getElementById('resetBgBtn');
   const downloadBtn = document.getElementById('downloadBtn');
-
   const presetBtns = document.querySelectorAll('.preset-grid button');
 
-  // --- Elemen Fitur Sebelumnya ---
   const titleColor = document.getElementById('titleColor');
   const addressColor = document.getElementById('addressColor');
   const priceColor = document.getElementById('priceColor');
@@ -37,12 +37,10 @@
   const contrastValue = document.getElementById('contrastValue');
   const grayscaleValue = document.getElementById('grayscaleValue');
 
-  // --- Elemen Gradient ---
   const gradientBtns = document.querySelectorAll('.gradient-btn');
   const gradientCustom = document.getElementById('gradientCustom');
   const applyGradientBtn = document.getElementById('applyGradientBtn');
 
-  // --- Elemen Watermark ---
   const watermarkInput = document.getElementById('watermarkInput');
   const watermarkColor = document.getElementById('watermarkColor');
   const watermarkOpacity = document.getElementById('watermarkOpacity');
@@ -51,120 +49,181 @@
   const removeWatermarkBtn = document.getElementById('removeWatermarkBtn');
   const watermarkDisplay = document.getElementById('watermarkDisplay');
 
-  // --- Elemen Palet ---
   const paletteBtns = document.querySelectorAll('.palette-btn');
-
-  // --- Elemen Mode ---
   const focusToggle = document.getElementById('focusToggle');
   const guideToggle = document.getElementById('guideToggle');
   const guideModal = document.getElementById('guideModal');
   const guideClose = document.getElementById('guideClose');
   const guideCloseBtn = document.getElementById('guideCloseBtn');
 
-  // --- Auto Save ---
-  let autoSaveTimer = null;
-  let isSaving = false;
-
-  // --- Toast ---
-  const toastContainer = document.getElementById('toastContainer');
-
   // ============================================
-  // UPDATE UKURAN - PERBAIKAN UTAMA
+  // PERBAIKAN UTAMA: UPDATE UKURAN
   // ============================================
   function updateSize() {
     let w = parseInt(widthInput.value, 10);
     let h = parseInt(heightInput.value, 10);
 
-    // Validasi
     if (isNaN(w) || w < 20) w = 700;
     if (isNaN(h) || h < 20) h = 840;
     if (w > 3000) w = 3000;
     if (h > 4000) h = 4000;
 
-    // Set nilai input ke yang valid
     widthInput.value = w;
     heightInput.value = h;
 
-    // TERAPKAN UKURAN KE POSTER
+    // === PERBAIKAN: Set ukuran langsung ke elemen ===
     poster.style.width = w + 'px';
     poster.style.height = h + 'px';
+    poster.style.maxWidth = 'none';
+    poster.style.maxHeight = 'none';
     poster.style.aspectRatio = 'auto';
+    poster.style.flexShrink = '0';
 
-    // Update juga wrapper agar tidak membatasi
+    // === PERBAIKAN: Update container juga ===
     const mainArea = document.querySelector('.main-area');
     if (mainArea) {
       mainArea.style.overflow = 'auto';
+      mainArea.style.display = 'flex';
+      mainArea.style.justifyContent = 'center';
+      mainArea.style.alignItems = 'center';
     }
 
-    // Paksa reflow agar perubahan langsung terlihat
-    poster.style.display = 'flex';
-    poster.style.flexShrink = '0';
+    // === PERBAIKAN: Update parent wrapper ===
+    const builderContainer = document.querySelector('.builder-container');
+    if (builderContainer) {
+      builderContainer.style.overflow = 'hidden';
+    }
 
     triggerAutoSave();
-
-    // Tampilkan notifikasi perubahan ukuran
-    if (typeof showToast === 'function') {
-      showToast('Ukuran', `Poster diubah menjadi ${w}×${h} px.`, 'info');
-    }
   }
 
   // ============================================
-  // DOWNLOAD PNG - PERBAIKAN
+  // PERBAIKAN: DOWNLOAD PNG
   // ============================================
   function downloadPoster() {
-    // Pastikan ukuran terupdate sebelum download
+    // Pastikan ukuran terupdate
     updateSize();
+
+    const w = parseInt(poster.style.width, 10) || 700;
+    const h = parseInt(poster.style.height, 10) || 840;
 
     // Tampilkan loading
     if (typeof showToast === 'function') {
       showToast('Mengunduh', 'Sedang memproses gambar...', 'info');
     }
 
-    // Dapatkan ukuran sebenarnya dari poster
-    const w = parseInt(poster.style.width, 10) || 700;
-    const h = parseInt(poster.style.height, 10) || 840;
+    // Clone poster untuk menghindari masalah layout
+    const clone = poster.cloneNode(true);
+    clone.style.position = 'fixed';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.width = w + 'px';
+    clone.style.height = h + 'px';
+    clone.style.maxWidth = 'none';
+    clone.style.maxHeight = 'none';
+    clone.style.aspectRatio = 'auto';
+    clone.style.borderRadius = '20px';
+    clone.style.overflow = 'hidden';
+    clone.style.boxShadow = 'none';
+    clone.style.flexShrink = '0';
+    document.body.appendChild(clone);
 
-    // Gunakan html2canvas dengan opsi yang tepat
-    html2canvas(poster, {
-      scale: 2.0, // Resolusi tinggi untuk cetak
-      useCORS: true, // Izinkan gambar dari URL eksternal
-      allowTaint: false,
-      backgroundColor: null, // Biarkan background sesuai
+    // Pastikan semua gaya tercopy
+    const styles = window.getComputedStyle(poster);
+    clone.style.fontFamily = styles.fontFamily;
+    clone.style.backgroundColor = styles.backgroundColor;
+    clone.style.backgroundImage = styles.backgroundImage;
+    clone.style.backgroundSize = styles.backgroundSize;
+    clone.style.backgroundPosition = styles.backgroundPosition;
+    clone.style.backgroundRepeat = styles.backgroundRepeat;
+    clone.style.filter = styles.filter;
+    clone.style.padding = styles.padding;
+
+    // Copy child styles
+    const children = clone.querySelectorAll('*');
+    const originalChildren = poster.querySelectorAll('*');
+    originalChildren.forEach((orig, index) => {
+      if (children[index]) {
+        const origStyle = window.getComputedStyle(orig);
+        children[index].style.color = origStyle.color;
+        children[index].style.fontFamily = origStyle.fontFamily;
+        children[index].style.fontSize = origStyle.fontSize;
+        children[index].style.fontWeight = origStyle.fontWeight;
+        children[index].style.textAlign = origStyle.textAlign;
+        children[index].style.textShadow = origStyle.textShadow;
+        children[index].style.margin = origStyle.margin;
+        children[index].style.padding = origStyle.padding;
+        children[index].style.opacity = origStyle.opacity;
+        children[index].style.display = origStyle.display;
+        children[index].style.position = origStyle.position;
+        children[index].style.top = origStyle.top;
+        children[index].style.bottom = origStyle.bottom;
+        children[index].style.left = origStyle.left;
+        children[index].style.right = origStyle.right;
+        children[index].style.transform = origStyle.transform;
+        children[index].style.zIndex = origStyle.zIndex;
+      }
+    });
+
+    // Gunakan html2canvas pada clone
+    html2canvas(clone, {
+      scale: 2.0,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
       logging: false,
       width: w,
       height: h,
       onclone: function(doc) {
-        // Pastikan semua elemen ter-clone dengan benar
-        const clonedPoster = doc.getElementById('poster');
-        if (clonedPoster) {
-          clonedPoster.style.width = w + 'px';
-          clonedPoster.style.height = h + 'px';
+        const cloned = doc.getElementById('poster');
+        if (cloned) {
+          cloned.style.width = w + 'px';
+          cloned.style.height = h + 'px';
+          cloned.style.maxWidth = 'none';
+          cloned.style.maxHeight = 'none';
         }
       }
     }).then((canvas) => {
-      // Buat link download
-      const link = document.createElement('a');
-      link.download = 'poster-banner.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
+      // Hapus clone
+      if (clone.parentNode) clone.parentNode.removeChild(clone);
 
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // === PERBAIKAN: Download dengan Blob untuk kompatibilitas ===
+      canvas.toBlob(function(blob) {
+        if (!blob) {
+          // Fallback: pakai toDataURL
+          const link = document.createElement('a');
+          link.download = 'poster-banner.png';
+          link.href = canvas.toDataURL('image/png', 1.0);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = 'poster-banner.png';
+          link.href = url;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 1000);
+        }
 
-      // Notifikasi sukses
-      if (typeof showToast === 'function') {
-        showToast('Berhasil!', 'Poster berhasil diunduh ke galeri.', 'success');
-      }
+        if (typeof showToast === 'function') {
+          showToast('Berhasil!', 'Poster berhasil diunduh ke galeri.', 'success');
+        }
+        if (typeof trackDownload === 'function') {
+          trackDownload();
+        }
+      }, 'image/png', 1.0);
 
-      // Track download di analytics
-      if (typeof trackDownload === 'function') {
-        trackDownload();
-      }
     }).catch((err) => {
+      // Hapus clone jika error
+      if (clone.parentNode) clone.parentNode.removeChild(clone);
       console.error('Export error:', err);
       if (typeof showToast === 'function') {
-        showToast('Gagal', 'Gagal mengunduh poster. Periksa koneksi atau coba ulang.', 'error');
+        showToast('Gagal', 'Gagal mengunduh poster. Coba gunakan background gambar yang mendukung CORS.', 'error');
       } else {
         alert('Gagal mengunduh poster. Pastikan gambar background mendukung CORS.');
       }
@@ -172,13 +231,12 @@
   }
 
   // ============================================
-  // UPDATE TEKS
+  // FUNGSI LAINNYA
   // ============================================
   function updateTexts() {
     productDisplay.textContent = productInput.value.trim() || 'Nama Produk';
     addressDisplay.textContent = addressInput.value.trim() || 'Alamat lengkap';
     priceDisplay.textContent = priceInput.value.trim() || 'Rp 0';
-
     if (typeof saveHistory === 'function') {
       saveHistory({
         product: productDisplay.textContent,
@@ -186,13 +244,9 @@
         price: priceDisplay.textContent
       });
     }
-
     triggerAutoSave();
   }
 
-  // ============================================
-  // BACKGROUND
-  // ============================================
   function setBackgroundFromURL(url) {
     if (!url) return;
     poster.style.backgroundImage = `url('${url}')`;
@@ -204,14 +258,11 @@
   function resetBackground() {
     poster.style.backgroundImage = 'none';
     poster.style.backgroundColor = '#2b2b2b';
-    fileInput.value = '';
+    if (fileInput) fileInput.value = '';
     gradientBtns.forEach(btn => btn.classList.remove('active'));
     triggerAutoSave();
   }
 
-  // ============================================
-  // GRADIENT
-  // ============================================
   function applyGradient(gradientValue) {
     if (!gradientValue || gradientValue === 'none') {
       if (poster.style.backgroundImage && poster.style.backgroundImage !== 'none' && !poster.style.backgroundImage.includes('gradient')) {
@@ -223,7 +274,6 @@
       gradientBtns.forEach(btn => btn.classList.remove('active'));
       return;
     }
-
     poster.style.backgroundImage = gradientValue;
     poster.style.backgroundColor = 'transparent';
     gradientBtns.forEach(btn => {
@@ -235,27 +285,18 @@
   function applyCustomGradient() {
     const value = gradientCustom.value.trim();
     if (!value) {
-      if (typeof showToast === 'function') {
-        showToast('Peringatan', 'Masukkan nilai gradient CSS terlebih dahulu.', 'warning');
-      }
+      if (typeof showToast === 'function') showToast('Peringatan', 'Masukkan nilai gradient CSS.', 'warning');
       return;
     }
     if (!value.includes('gradient')) {
-      if (typeof showToast === 'function') {
-        showToast('Peringatan', 'Format gradient tidak valid. Gunakan: linear-gradient(...) atau radial-gradient(...)', 'warning');
-      }
+      if (typeof showToast === 'function') showToast('Peringatan', 'Format gradient tidak valid.', 'warning');
       return;
     }
     applyGradient(value);
     gradientCustom.value = '';
-    if (typeof showToast === 'function') {
-      showToast('Berhasil', 'Gradient kustom berhasil diterapkan.', 'success');
-    }
+    if (typeof showToast === 'function') showToast('Berhasil', 'Gradient kustom diterapkan.', 'success');
   }
 
-  // ============================================
-  // WARNA TEKS
-  // ============================================
   function updateColors() {
     productDisplay.style.color = titleColor.value;
     addressDisplay.style.color = addressColor.value;
@@ -263,9 +304,6 @@
     triggerAutoSave();
   }
 
-  // ============================================
-  // FONT
-  // ============================================
   function updateFont() {
     const font = fontSelect.value;
     productDisplay.style.fontFamily = font;
@@ -274,9 +312,6 @@
     triggerAutoSave();
   }
 
-  // ============================================
-  // POSISI TEKS
-  // ============================================
   function updateAlignment(align) {
     productDisplay.style.textAlign = align;
     addressDisplay.style.textAlign = align;
@@ -284,22 +319,12 @@
     triggerAutoSave();
   }
 
-  // ============================================
-  // FILTER EFEK
-  // ============================================
   function updateFilters() {
     const blur = blurRange.value;
     const brightness = brightnessRange.value;
     const contrast = contrastRange.value;
     const grayscale = grayscaleRange.value;
-
-    poster.style.filter = `
-      blur(${blur}px)
-      brightness(${brightness})
-      contrast(${contrast})
-      grayscale(${grayscale}%)
-    `;
-
+    poster.style.filter = `blur(${blur}px) brightness(${brightness}) contrast(${contrast}) grayscale(${grayscale}%)`;
     blurValue.textContent = blur;
     brightnessValue.textContent = brightness;
     contrastValue.textContent = contrast;
@@ -307,23 +332,17 @@
     triggerAutoSave();
   }
 
-  // ============================================
-  // WATERMARK
-  // ============================================
   function updateWatermark() {
     const text = watermarkInput.value.trim();
     const color = watermarkColor.value;
     const opacity = parseFloat(watermarkOpacity.value);
     const position = watermarkPosition.value;
-
     watermarkOpacityValue.textContent = opacity.toFixed(2);
-
     if (text) {
       watermarkDisplay.textContent = text;
       watermarkDisplay.style.color = color;
       watermarkDisplay.style.opacity = opacity;
       watermarkDisplay.style.display = 'block';
-
       const posMap = {
         'top-left': { top: '20px', left: '20px', bottom: 'auto', right: 'auto', transform: 'none' },
         'top-right': { top: '20px', right: '20px', bottom: 'auto', left: 'auto', transform: 'none' },
@@ -345,9 +364,6 @@
     triggerAutoSave();
   }
 
-  // ============================================
-  // PALET
-  // ============================================
   function applyPalette(title, address, price) {
     titleColor.value = title;
     addressColor.value = address;
@@ -358,6 +374,9 @@
   // ============================================
   // AUTO SAVE
   // ============================================
+  let autoSaveTimer = null;
+  let isSaving = false;
+
   function getCurrentState() {
     return {
       product: productInput.value,
@@ -430,7 +449,6 @@
         }
       }
 
-      // Update semua
       updateTexts();
       updateSize();
       updateColors();
@@ -441,7 +459,6 @@
       if (activeAlign) {
         updateAlignment(activeAlign.getAttribute('data-align'));
       }
-
       return true;
     } catch (e) {
       console.warn('Load auto save failed:', e);
@@ -453,7 +470,6 @@
     const dot = document.getElementById('saveDot');
     const statusText = document.getElementById('saveStatus');
     if (!dot || !statusText) return;
-
     if (status === 'saving') {
       dot.className = 'save-dot saving';
       statusText.textContent = 'Menyimpan...';
@@ -467,7 +483,6 @@
     if (isSaving) return;
     isSaving = true;
     updateSaveIndicator('saving');
-
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
       saveStateToLocalStorage();
@@ -477,77 +492,31 @@
   }
 
   // ============================================
-  // FOCUS MODE
-  // ============================================
-  if (focusToggle) {
-    focusToggle.addEventListener('click', function() {
-      document.body.classList.toggle('focus-mode');
-      const isFocus = document.body.classList.contains('focus-mode');
-      this.innerHTML = isFocus
-        ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`
-        : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
-      if (typeof showToast === 'function') {
-        showToast('Mode Fokus', isFocus ? 'Sidebar disembunyikan.' : 'Sidebar ditampilkan kembali.', 'info');
-      }
-    });
-  }
-
-  // ============================================
-  // GUIDE MODAL
-  // ============================================
-  if (guideToggle) {
-    guideToggle.addEventListener('click', function() {
-      if (guideModal) guideModal.classList.add('active');
-    });
-  }
-
-  if (guideClose) {
-    guideClose.addEventListener('click', function() {
-      if (guideModal) guideModal.classList.remove('active');
-    });
-  }
-
-  if (guideCloseBtn) {
-    guideCloseBtn.addEventListener('click', function() {
-      if (guideModal) guideModal.classList.remove('active');
-    });
-  }
-
-  if (guideModal) {
-    guideModal.addEventListener('click', function(e) {
-      if (e.target === this) {
-        guideModal.classList.remove('active');
-      }
-    });
-  }
-
-  // ============================================
   // EVENT LISTENERS
   // ============================================
 
-  // --- Teks ---
+  // Teks
   productInput.addEventListener('input', updateTexts);
   addressInput.addEventListener('input', updateTexts);
   priceInput.addEventListener('input', updateTexts);
 
-  // --- Ukuran ---
+  // Ukuran - PERBAIKAN: langsung update
   widthInput.addEventListener('input', function() {
-    // Update langsung saat input berubah
     updateSize();
   });
   heightInput.addEventListener('input', function() {
     updateSize();
   });
 
-  // --- Warna ---
+  // Warna
   titleColor.addEventListener('input', updateColors);
   addressColor.addEventListener('input', updateColors);
   priceColor.addEventListener('input', updateColors);
 
-  // --- Font ---
+  // Font
   fontSelect.addEventListener('change', updateFont);
 
-  // --- Alignment ---
+  // Alignment
   alignBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       alignBtns.forEach(b => b.classList.remove('active'));
@@ -556,20 +525,17 @@
     });
   });
 
-  // --- Filter ---
+  // Filter
   blurRange.addEventListener('input', updateFilters);
   brightnessRange.addEventListener('input', updateFilters);
   contrastRange.addEventListener('input', updateFilters);
   grayscaleRange.addEventListener('input', updateFilters);
 
-  // --- Gradient ---
+  // Gradient
   gradientBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const gradient = this.getAttribute('data-gradient');
       applyGradient(gradient);
-      if (gradient && gradient !== 'none' && typeof showToast === 'function') {
-        showToast('Gradient', 'Gradient background berhasil diterapkan.', 'success');
-      }
     });
   });
 
@@ -579,20 +545,18 @@
 
   if (gradientCustom) {
     gradientCustom.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        applyCustomGradient();
-      }
+      if (e.key === 'Enter') applyCustomGradient();
     });
   }
 
-  // --- Watermark ---
+  // Watermark
   if (watermarkInput) watermarkInput.addEventListener('input', updateWatermark);
   if (watermarkColor) watermarkColor.addEventListener('input', updateWatermark);
   if (watermarkOpacity) watermarkOpacity.addEventListener('input', updateWatermark);
   if (watermarkPosition) watermarkPosition.addEventListener('change', updateWatermark);
   if (removeWatermarkBtn) removeWatermarkBtn.addEventListener('click', removeWatermark);
 
-  // --- Palet ---
+  // Palet
   paletteBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const title = this.getAttribute('data-title');
@@ -600,14 +564,11 @@
       const price = this.getAttribute('data-price');
       if (title && address && price) {
         applyPalette(title, address, price);
-        if (typeof showToast === 'function') {
-          showToast('Palet', 'Palet warna berhasil diterapkan.', 'success');
-        }
       }
     });
   });
 
-  // --- Preset Ukuran ---
+  // Preset Ukuran
   presetBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const w = this.getAttribute('data-w');
@@ -616,23 +577,17 @@
         widthInput.value = w;
         heightInput.value = h;
         updateSize();
-        if (typeof showToast === 'function') {
-          showToast('Ukuran', `Ukuran diubah ke ${w}×${h} px.`, 'info');
-        }
       }
     });
   });
 
-  // --- Background ---
+  // Background
   bgButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const bgUrl = this.getAttribute('data-bg');
       if (bgUrl) {
         setBackgroundFromURL(bgUrl);
         if (fileInput) fileInput.value = '';
-        if (typeof showToast === 'function') {
-          showToast('Background', 'Gambar background berhasil diterapkan.', 'success');
-        }
       }
     });
   });
@@ -649,9 +604,6 @@
           poster.style.backgroundColor = 'transparent';
           gradientBtns.forEach(btn => btn.classList.remove('active'));
           triggerAutoSave();
-          if (typeof showToast === 'function') {
-            showToast('Background', 'Gambar berhasil diupload sebagai background.', 'success');
-          }
         }
       };
       reader.readAsDataURL(file);
@@ -662,13 +614,10 @@
     resetBgBtn.addEventListener('click', function() {
       resetBackground();
       if (fileInput) fileInput.value = '';
-      if (typeof showToast === 'function') {
-        showToast('Background', 'Background direset ke default.', 'info');
-      }
     });
   }
 
-  // --- DOWNLOAD PNG ---
+  // === PERBAIKAN: Download ===
   if (downloadBtn) {
     downloadBtn.addEventListener('click', downloadPoster);
   }
@@ -683,17 +632,50 @@
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    if (typeof showToast === 'function') {
-      showToast('Tema', isLight ? 'Mode terang diaktifkan.' : 'Mode gelap diaktifkan.', 'info');
-    }
   }
 
   if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
   if (themeToggleHome) themeToggleHome.addEventListener('click', toggleTheme);
 
-  // Load theme preference
   if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light-mode');
+  }
+
+  // ============================================
+  // FOCUS MODE
+  // ============================================
+  if (focusToggle) {
+    focusToggle.addEventListener('click', function() {
+      document.body.classList.toggle('focus-mode');
+      const isFocus = document.body.classList.contains('focus-mode');
+      this.innerHTML = isFocus
+        ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`
+        : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+    });
+  }
+
+  // ============================================
+  // GUIDE MODAL
+  // ============================================
+  if (guideToggle) {
+    guideToggle.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.add('active');
+    });
+  }
+  if (guideClose) {
+    guideClose.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.remove('active');
+    });
+  }
+  if (guideCloseBtn) {
+    guideCloseBtn.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.remove('active');
+    });
+  }
+  if (guideModal) {
+    guideModal.addEventListener('click', function(e) {
+      if (e.target === this) guideModal.classList.remove('active');
+    });
   }
 
   // ============================================
@@ -706,9 +688,7 @@
 
   window.openHistoryModal = function() {
     if (historyModal) historyModal.classList.add('active');
-    if (typeof renderHistory === 'function') {
-      renderHistory();
-    }
+    if (typeof renderHistory === 'function') renderHistory();
   };
 
   if (historyClose) {
@@ -716,36 +696,28 @@
       if (historyModal) historyModal.classList.remove('active');
     });
   }
-
   if (historyCloseBtn) {
     historyCloseBtn.addEventListener('click', function() {
       if (historyModal) historyModal.classList.remove('active');
     });
   }
-
   if (historyModal) {
     historyModal.addEventListener('click', function(e) {
-      if (e.target === this) {
-        historyModal.classList.remove('active');
-      }
+      if (e.target === this) historyModal.classList.remove('active');
     });
   }
-
   if (historyClear) {
     historyClear.addEventListener('click', function() {
       if (confirm('Hapus semua riwayat?')) {
         if (typeof clearHistory === 'function') {
           clearHistory();
           renderHistory();
-          if (typeof showToast === 'function') {
-            showToast('Riwayat', 'Semua riwayat telah dihapus.', 'warning');
-          }
         }
       }
     });
   }
 
-  // --- Tambah tombol history di footer ---
+  // Tombol history di footer
   const footer = document.querySelector('.main-footer');
   if (footer) {
     const historyBtn = document.createElement('button');
@@ -790,11 +762,9 @@
   // INISIALISASI
   // ============================================
 
-  // Load Auto Save
   const hasSaved = loadStateFromLocalStorage();
 
   if (!hasSaved) {
-    // Default values
     updateTexts();
     updateSize();
     updateColors();
@@ -812,14 +782,7 @@
     }
   }, 30000);
 
-  // Tampilkan toast selamat datang
-  setTimeout(() => {
-    if (typeof showToast === 'function') {
-      showToast('Selamat Datang!', 'Mulai buat poster Anda sekarang. Gunakan panduan jika perlu bantuan.', 'info');
-    }
-  }, 800);
-
-  // Ekspos fungsi download ke global untuk debugging
+  // Ekspos fungsi download
   window.downloadPoster = downloadPoster;
 
 })();
