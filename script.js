@@ -37,7 +37,7 @@
   const contrastValue = document.getElementById('contrastValue');
   const grayscaleValue = document.getElementById('grayscaleValue');
 
-  // --- Elemen Gradient Baru ---
+  // --- Elemen Gradient ---
   const gradientBtns = document.querySelectorAll('.gradient-btn');
   const gradientCustom = document.getElementById('gradientCustom');
   const applyGradientBtn = document.getElementById('applyGradientBtn');
@@ -68,7 +68,112 @@
   // --- Toast ---
   const toastContainer = document.getElementById('toastContainer');
 
-  // --- update teks ---
+  // ============================================
+  // UPDATE UKURAN - PERBAIKAN UTAMA
+  // ============================================
+  function updateSize() {
+    let w = parseInt(widthInput.value, 10);
+    let h = parseInt(heightInput.value, 10);
+
+    // Validasi
+    if (isNaN(w) || w < 20) w = 700;
+    if (isNaN(h) || h < 20) h = 840;
+    if (w > 3000) w = 3000;
+    if (h > 4000) h = 4000;
+
+    // Set nilai input ke yang valid
+    widthInput.value = w;
+    heightInput.value = h;
+
+    // TERAPKAN UKURAN KE POSTER
+    poster.style.width = w + 'px';
+    poster.style.height = h + 'px';
+    poster.style.aspectRatio = 'auto';
+
+    // Update juga wrapper agar tidak membatasi
+    const mainArea = document.querySelector('.main-area');
+    if (mainArea) {
+      mainArea.style.overflow = 'auto';
+    }
+
+    // Paksa reflow agar perubahan langsung terlihat
+    poster.style.display = 'flex';
+    poster.style.flexShrink = '0';
+
+    triggerAutoSave();
+
+    // Tampilkan notifikasi perubahan ukuran
+    if (typeof showToast === 'function') {
+      showToast('Ukuran', `Poster diubah menjadi ${w}×${h} px.`, 'info');
+    }
+  }
+
+  // ============================================
+  // DOWNLOAD PNG - PERBAIKAN
+  // ============================================
+  function downloadPoster() {
+    // Pastikan ukuran terupdate sebelum download
+    updateSize();
+
+    // Tampilkan loading
+    if (typeof showToast === 'function') {
+      showToast('Mengunduh', 'Sedang memproses gambar...', 'info');
+    }
+
+    // Dapatkan ukuran sebenarnya dari poster
+    const w = parseInt(poster.style.width, 10) || 700;
+    const h = parseInt(poster.style.height, 10) || 840;
+
+    // Gunakan html2canvas dengan opsi yang tepat
+    html2canvas(poster, {
+      scale: 2.0, // Resolusi tinggi untuk cetak
+      useCORS: true, // Izinkan gambar dari URL eksternal
+      allowTaint: false,
+      backgroundColor: null, // Biarkan background sesuai
+      logging: false,
+      width: w,
+      height: h,
+      onclone: function(doc) {
+        // Pastikan semua elemen ter-clone dengan benar
+        const clonedPoster = doc.getElementById('poster');
+        if (clonedPoster) {
+          clonedPoster.style.width = w + 'px';
+          clonedPoster.style.height = h + 'px';
+        }
+      }
+    }).then((canvas) => {
+      // Buat link download
+      const link = document.createElement('a');
+      link.download = 'poster-banner.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Notifikasi sukses
+      if (typeof showToast === 'function') {
+        showToast('Berhasil!', 'Poster berhasil diunduh ke galeri.', 'success');
+      }
+
+      // Track download di analytics
+      if (typeof trackDownload === 'function') {
+        trackDownload();
+      }
+    }).catch((err) => {
+      console.error('Export error:', err);
+      if (typeof showToast === 'function') {
+        showToast('Gagal', 'Gagal mengunduh poster. Periksa koneksi atau coba ulang.', 'error');
+      } else {
+        alert('Gagal mengunduh poster. Pastikan gambar background mendukung CORS.');
+      }
+    });
+  }
+
+  // ============================================
+  // UPDATE TEKS
+  // ============================================
   function updateTexts() {
     productDisplay.textContent = productInput.value.trim() || 'Nama Produk';
     addressDisplay.textContent = addressInput.value.trim() || 'Alamat lengkap';
@@ -85,28 +190,13 @@
     triggerAutoSave();
   }
 
-  // --- update ukuran ---
-  function updateSize() {
-    let w = parseInt(widthInput.value, 10);
-    let h = parseInt(heightInput.value, 10);
-    if (isNaN(w) || w < 20) w = 700;
-    if (isNaN(h) || h < 20) h = 840;
-    if (w > 3000) w = 3000;
-    if (h > 4000) h = 4000;
-    widthInput.value = w;
-    heightInput.value = h;
-    poster.style.width = w + 'px';
-    poster.style.height = h + 'px';
-    poster.style.aspectRatio = 'auto';
-    triggerAutoSave();
-  }
-
-  // --- background ---
+  // ============================================
+  // BACKGROUND
+  // ============================================
   function setBackgroundFromURL(url) {
     if (!url) return;
-    // Hapus gradient jika ada
     poster.style.backgroundImage = `url('${url}')`;
-    // Reset active gradient buttons
+    poster.style.backgroundColor = 'transparent';
     gradientBtns.forEach(btn => btn.classList.remove('active'));
     triggerAutoSave();
   }
@@ -119,11 +209,12 @@
     triggerAutoSave();
   }
 
-  // --- GRADIENT FUNCTIONS ---
+  // ============================================
+  // GRADIENT
+  // ============================================
   function applyGradient(gradientValue) {
     if (!gradientValue || gradientValue === 'none') {
-      // Jika ada gambar background, pertahankan
-      if (poster.style.backgroundImage && poster.style.backgroundImage !== 'none') {
+      if (poster.style.backgroundImage && poster.style.backgroundImage !== 'none' && !poster.style.backgroundImage.includes('gradient')) {
         // biarkan
       } else {
         poster.style.backgroundImage = 'none';
@@ -144,20 +235,27 @@
   function applyCustomGradient() {
     const value = gradientCustom.value.trim();
     if (!value) {
-      showToast('Peringatan', 'Masukkan nilai gradient CSS terlebih dahulu.', 'warning');
+      if (typeof showToast === 'function') {
+        showToast('Peringatan', 'Masukkan nilai gradient CSS terlebih dahulu.', 'warning');
+      }
       return;
     }
-    // Validasi sederhana
     if (!value.includes('gradient')) {
-      showToast('Peringatan', 'Format gradient tidak valid. Gunakan: linear-gradient(...) atau radial-gradient(...)', 'warning');
+      if (typeof showToast === 'function') {
+        showToast('Peringatan', 'Format gradient tidak valid. Gunakan: linear-gradient(...) atau radial-gradient(...)', 'warning');
+      }
       return;
     }
     applyGradient(value);
     gradientCustom.value = '';
-    showToast('Berhasil', 'Gradient kustom berhasil diterapkan.', 'success');
+    if (typeof showToast === 'function') {
+      showToast('Berhasil', 'Gradient kustom berhasil diterapkan.', 'success');
+    }
   }
 
-  // --- update warna teks ---
+  // ============================================
+  // WARNA TEKS
+  // ============================================
   function updateColors() {
     productDisplay.style.color = titleColor.value;
     addressDisplay.style.color = addressColor.value;
@@ -165,7 +263,9 @@
     triggerAutoSave();
   }
 
-  // --- update font ---
+  // ============================================
+  // FONT
+  // ============================================
   function updateFont() {
     const font = fontSelect.value;
     productDisplay.style.fontFamily = font;
@@ -174,7 +274,9 @@
     triggerAutoSave();
   }
 
-  // --- update posisi teks ---
+  // ============================================
+  // POSISI TEKS
+  // ============================================
   function updateAlignment(align) {
     productDisplay.style.textAlign = align;
     addressDisplay.style.textAlign = align;
@@ -182,18 +284,22 @@
     triggerAutoSave();
   }
 
-  // --- update filter efek ---
+  // ============================================
+  // FILTER EFEK
+  // ============================================
   function updateFilters() {
     const blur = blurRange.value;
     const brightness = brightnessRange.value;
     const contrast = contrastRange.value;
     const grayscale = grayscaleRange.value;
+
     poster.style.filter = `
       blur(${blur}px)
       brightness(${brightness})
       contrast(${contrast})
       grayscale(${grayscale}%)
     `;
+
     blurValue.textContent = blur;
     brightnessValue.textContent = brightness;
     contrastValue.textContent = contrast;
@@ -201,7 +307,9 @@
     triggerAutoSave();
   }
 
-  // --- update watermark ---
+  // ============================================
+  // WATERMARK
+  // ============================================
   function updateWatermark() {
     const text = watermarkInput.value.trim();
     const color = watermarkColor.value;
@@ -231,14 +339,15 @@
     triggerAutoSave();
   }
 
-  // --- remove watermark ---
   function removeWatermark() {
     watermarkInput.value = '';
     watermarkDisplay.style.display = 'none';
     triggerAutoSave();
   }
 
-  // --- apply palette ---
+  // ============================================
+  // PALET
+  // ============================================
   function applyPalette(title, address, price) {
     titleColor.value = title;
     addressColor.value = address;
@@ -246,7 +355,9 @@
     updateColors();
   }
 
-  // --- AUTO SAVE ---
+  // ============================================
+  // AUTO SAVE
+  // ============================================
   function getCurrentState() {
     return {
       product: productInput.value,
@@ -268,7 +379,6 @@
       watermarkOpacity: watermarkOpacity.value,
       watermarkPosition: watermarkPosition.value,
       background: poster.style.backgroundImage || '',
-      gradient: poster.style.backgroundImage || '',
     };
   }
 
@@ -311,10 +421,8 @@
         btn.classList.toggle('active', btn.getAttribute('data-align') === align);
       });
 
-      // Restore background/gradient
       if (state.background && state.background !== '') {
         poster.style.backgroundImage = state.background;
-        // Cek apakah background adalah gradient
         if (state.background.includes('gradient')) {
           gradientBtns.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-gradient') === state.background);
@@ -322,6 +430,7 @@
         }
       }
 
+      // Update semua
       updateTexts();
       updateSize();
       updateColors();
@@ -367,102 +476,78 @@
     }, 500);
   }
 
-  // --- TOAST / NOTIFICATION ---
-  function showToast(title, message, type = 'info') {
-    if (!toastContainer) return;
-
-    const types = {
-      success: { icon: 'success', color: '#4a8a4a' },
-      error: { icon: 'error', color: '#d04a4a' },
-      warning: { icon: 'warning', color: '#d4a020' },
-      info: { icon: 'info', color: '#4a7ad4' }
-    };
-
-    const t = types[type] || types.info;
-
-    const icons = {
-      success: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-      error: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
-      warning: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>`,
-      info: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
-    };
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-      <div class="toast-icon">${icons[type] || icons.info}</div>
-      <div class="toast-content">
-        <div class="toast-title">${title}</div>
-        <div class="toast-message">${message}</div>
-      </div>
-      <button class="toast-close" onclick="this.closest('.toast').remove()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    `;
-
-    toastContainer.appendChild(toast);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.classList.add('toast-removing');
-        setTimeout(() => {
-          if (toast.parentNode) toast.remove();
-        }, 300);
+  // ============================================
+  // FOCUS MODE
+  // ============================================
+  if (focusToggle) {
+    focusToggle.addEventListener('click', function() {
+      document.body.classList.toggle('focus-mode');
+      const isFocus = document.body.classList.contains('focus-mode');
+      this.innerHTML = isFocus
+        ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`
+        : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+      if (typeof showToast === 'function') {
+        showToast('Mode Fokus', isFocus ? 'Sidebar disembunyikan.' : 'Sidebar ditampilkan kembali.', 'info');
       }
-    }, 5000);
+    });
   }
 
-  // Expose toast ke global
-  window.showToast = showToast;
+  // ============================================
+  // GUIDE MODAL
+  // ============================================
+  if (guideToggle) {
+    guideToggle.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.add('active');
+    });
+  }
 
-  // --- FOCUS MODE ---
-  focusToggle.addEventListener('click', function() {
-    document.body.classList.toggle('focus-mode');
-    const isFocus = document.body.classList.contains('focus-mode');
-    this.innerHTML = isFocus
-      ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`
-      : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
-    if (isFocus) {
-      showToast('Mode Fokus', 'Sidebar disembunyikan. Fokus pada pratinjau.', 'info');
-    } else {
-      showToast('Mode Normal', 'Sidebar ditampilkan kembali.', 'info');
-    }
-  });
+  if (guideClose) {
+    guideClose.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.remove('active');
+    });
+  }
 
-  // --- GUIDE MODAL ---
-  guideToggle.addEventListener('click', function() {
-    guideModal.classList.add('active');
-  });
+  if (guideCloseBtn) {
+    guideCloseBtn.addEventListener('click', function() {
+      if (guideModal) guideModal.classList.remove('active');
+    });
+  }
 
-  guideClose.addEventListener('click', function() {
-    guideModal.classList.remove('active');
-  });
+  if (guideModal) {
+    guideModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        guideModal.classList.remove('active');
+      }
+    });
+  }
 
-  guideCloseBtn.addEventListener('click', function() {
-    guideModal.classList.remove('active');
-  });
+  // ============================================
+  // EVENT LISTENERS
+  // ============================================
 
-  guideModal.addEventListener('click', function(e) {
-    if (e.target === this) {
-      guideModal.classList.remove('active');
-    }
-  });
-
-  // --- event listeners ---
+  // --- Teks ---
   productInput.addEventListener('input', updateTexts);
   addressInput.addEventListener('input', updateTexts);
   priceInput.addEventListener('input', updateTexts);
 
-  widthInput.addEventListener('input', updateSize);
-  heightInput.addEventListener('input', updateSize);
+  // --- Ukuran ---
+  widthInput.addEventListener('input', function() {
+    // Update langsung saat input berubah
+    updateSize();
+  });
+  heightInput.addEventListener('input', function() {
+    updateSize();
+  });
 
+  // --- Warna ---
   titleColor.addEventListener('input', updateColors);
   addressColor.addEventListener('input', updateColors);
   priceColor.addEventListener('input', updateColors);
 
+  // --- Font ---
   fontSelect.addEventListener('change', updateFont);
 
+  // --- Alignment ---
   alignBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       alignBtns.forEach(b => b.classList.remove('active'));
@@ -471,39 +556,43 @@
     });
   });
 
+  // --- Filter ---
   blurRange.addEventListener('input', updateFilters);
   brightnessRange.addEventListener('input', updateFilters);
   contrastRange.addEventListener('input', updateFilters);
   grayscaleRange.addEventListener('input', updateFilters);
 
-  // --- Gradient events ---
+  // --- Gradient ---
   gradientBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const gradient = this.getAttribute('data-gradient');
       applyGradient(gradient);
-      if (gradient && gradient !== 'none') {
+      if (gradient && gradient !== 'none' && typeof showToast === 'function') {
         showToast('Gradient', 'Gradient background berhasil diterapkan.', 'success');
-      } else {
-        showToast('Gradient', 'Gradient dihapus.', 'info');
       }
     });
   });
 
-  applyGradientBtn.addEventListener('click', applyCustomGradient);
-  gradientCustom.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      applyCustomGradient();
-    }
-  });
+  if (applyGradientBtn) {
+    applyGradientBtn.addEventListener('click', applyCustomGradient);
+  }
 
-  // --- watermark events ---
-  watermarkInput.addEventListener('input', updateWatermark);
-  watermarkColor.addEventListener('input', updateWatermark);
-  watermarkOpacity.addEventListener('input', updateWatermark);
-  watermarkPosition.addEventListener('change', updateWatermark);
-  removeWatermarkBtn.addEventListener('click', removeWatermark);
+  if (gradientCustom) {
+    gradientCustom.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        applyCustomGradient();
+      }
+    });
+  }
 
-  // --- palette events ---
+  // --- Watermark ---
+  if (watermarkInput) watermarkInput.addEventListener('input', updateWatermark);
+  if (watermarkColor) watermarkColor.addEventListener('input', updateWatermark);
+  if (watermarkOpacity) watermarkOpacity.addEventListener('input', updateWatermark);
+  if (watermarkPosition) watermarkPosition.addEventListener('change', updateWatermark);
+  if (removeWatermarkBtn) removeWatermarkBtn.addEventListener('click', removeWatermark);
+
+  // --- Palet ---
   paletteBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const title = this.getAttribute('data-title');
@@ -511,12 +600,14 @@
       const price = this.getAttribute('data-price');
       if (title && address && price) {
         applyPalette(title, address, price);
-        showToast('Palet', 'Palet warna berhasil diterapkan.', 'success');
+        if (typeof showToast === 'function') {
+          showToast('Palet', 'Palet warna berhasil diterapkan.', 'success');
+        }
       }
     });
   });
 
-  // --- preset ukuran ---
+  // --- Preset Ukuran ---
   presetBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const w = this.getAttribute('data-w');
@@ -525,74 +616,66 @@
         widthInput.value = w;
         heightInput.value = h;
         updateSize();
-        showToast('Ukuran', `Ukuran diubah ke ${w}×${h} px.`, 'info');
+        if (typeof showToast === 'function') {
+          showToast('Ukuran', `Ukuran diubah ke ${w}×${h} px.`, 'info');
+        }
       }
     });
   });
 
-  // --- background ---
+  // --- Background ---
   bgButtons.forEach(btn => {
     btn.addEventListener('click', function() {
       const bgUrl = this.getAttribute('data-bg');
       if (bgUrl) {
         setBackgroundFromURL(bgUrl);
-        fileInput.value = '';
-        showToast('Background', 'Gambar background berhasil diterapkan.', 'success');
+        if (fileInput) fileInput.value = '';
+        if (typeof showToast === 'function') {
+          showToast('Background', 'Gambar background berhasil diterapkan.', 'success');
+        }
       }
     });
   });
 
-  fileInput.addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      const dataUrl = ev.target.result;
-      if (dataUrl) {
-        poster.style.backgroundImage = `url('${dataUrl}')`;
-        gradientBtns.forEach(btn => btn.classList.remove('active'));
-        triggerAutoSave();
-        showToast('Background', 'Gambar berhasil diupload sebagai background.', 'success');
-      }
-    };
-    reader.readAsDataURL(file);
-  });
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const dataUrl = ev.target.result;
+        if (dataUrl) {
+          poster.style.backgroundImage = `url('${dataUrl}')`;
+          poster.style.backgroundColor = 'transparent';
+          gradientBtns.forEach(btn => btn.classList.remove('active'));
+          triggerAutoSave();
+          if (typeof showToast === 'function') {
+            showToast('Background', 'Gambar berhasil diupload sebagai background.', 'success');
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
-  resetBgBtn.addEventListener('click', function() {
-    resetBackground();
-    fileInput.value = '';
-    showToast('Background', 'Background direset ke default.', 'info');
-  });
+  if (resetBgBtn) {
+    resetBgBtn.addEventListener('click', function() {
+      resetBackground();
+      if (fileInput) fileInput.value = '';
+      if (typeof showToast === 'function') {
+        showToast('Background', 'Background direset ke default.', 'info');
+      }
+    });
+  }
 
   // --- DOWNLOAD PNG ---
-  downloadBtn.addEventListener('click', function() {
-    updateSize();
-    showToast('Mengunduh', 'Sedang memproses gambar...', 'info');
-    html2canvas(poster, {
-      scale: 2.0,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
-      logging: false,
-      width: parseInt(poster.style.width, 10),
-      height: parseInt(poster.style.height, 10),
-    }).then((canvas) => {
-      const link = document.createElement('a');
-      link.download = 'poster-banner.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast('Berhasil', 'Poster berhasil diunduh!', 'success');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', downloadPoster);
+  }
 
-      if (typeof trackDownload === 'function') {
-        trackDownload();
-      }
-    }).catch((err) => {
-      console.warn('Export error:', err);
-      showToast('Error', 'Gagal mengunduh poster. Pastikan gambar background mendukung CORS.', 'error');
-    });
-  });
-
-  // --- Theme Toggle ---
+  // ============================================
+  // THEME TOGGLE
+  // ============================================
   const themeToggle = document.getElementById('themeToggle');
   const themeToggleHome = document.getElementById('themeToggleHome');
 
@@ -600,7 +683,9 @@
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    showToast('Tema', isLight ? 'Mode terang diaktifkan.' : 'Mode gelap diaktifkan.', 'info');
+    if (typeof showToast === 'function') {
+      showToast('Tema', isLight ? 'Mode terang diaktifkan.' : 'Mode gelap diaktifkan.', 'info');
+    }
   }
 
   if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
@@ -611,42 +696,54 @@
     document.body.classList.add('light-mode');
   }
 
-  // --- History Modal ---
+  // ============================================
+  // HISTORY MODAL
+  // ============================================
   const historyModal = document.getElementById('historyModal');
   const historyClose = document.getElementById('historyClose');
   const historyCloseBtn = document.getElementById('historyCloseBtn');
   const historyClear = document.getElementById('historyClear');
 
   window.openHistoryModal = function() {
-    historyModal.classList.add('active');
+    if (historyModal) historyModal.classList.add('active');
     if (typeof renderHistory === 'function') {
       renderHistory();
     }
   };
 
-  if (historyClose) historyClose.addEventListener('click', function() {
-    historyModal.classList.remove('active');
-  });
+  if (historyClose) {
+    historyClose.addEventListener('click', function() {
+      if (historyModal) historyModal.classList.remove('active');
+    });
+  }
 
-  if (historyCloseBtn) historyCloseBtn.addEventListener('click', function() {
-    historyModal.classList.remove('active');
-  });
+  if (historyCloseBtn) {
+    historyCloseBtn.addEventListener('click', function() {
+      if (historyModal) historyModal.classList.remove('active');
+    });
+  }
 
-  if (historyModal) historyModal.addEventListener('click', function(e) {
-    if (e.target === this) {
-      historyModal.classList.remove('active');
-    }
-  });
-
-  if (historyClear) historyClear.addEventListener('click', function() {
-    if (confirm('Hapus semua riwayat?')) {
-      if (typeof clearHistory === 'function') {
-        clearHistory();
-        renderHistory();
-        showToast('Riwayat', 'Semua riwayat telah dihapus.', 'warning');
+  if (historyModal) {
+    historyModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        historyModal.classList.remove('active');
       }
-    }
-  });
+    });
+  }
+
+  if (historyClear) {
+    historyClear.addEventListener('click', function() {
+      if (confirm('Hapus semua riwayat?')) {
+        if (typeof clearHistory === 'function') {
+          clearHistory();
+          renderHistory();
+          if (typeof showToast === 'function') {
+            showToast('Riwayat', 'Semua riwayat telah dihapus.', 'warning');
+          }
+        }
+      }
+    });
+  }
 
   // --- Tambah tombol history di footer ---
   const footer = document.querySelector('.main-footer');
@@ -689,11 +786,15 @@
     footer.appendChild(historyBtn);
   }
 
-  // --- Load Auto Save ---
+  // ============================================
+  // INISIALISASI
+  // ============================================
+
+  // Load Auto Save
   const hasSaved = loadStateFromLocalStorage();
 
-  // --- Inisialisasi ---
   if (!hasSaved) {
+    // Default values
     updateTexts();
     updateSize();
     updateColors();
@@ -704,16 +805,21 @@
     updateAlignment('left');
   }
 
-  // --- Auto save setiap 30 detik ---
+  // Auto save setiap 30 detik
   setInterval(() => {
     if (!isSaving) {
       saveStateToLocalStorage();
     }
   }, 30000);
 
-  // --- Tampilkan toast selamat datang ---
+  // Tampilkan toast selamat datang
   setTimeout(() => {
-    showToast('Selamat Datang!', 'Mulai buat poster Anda sekarang. Gunakan panduan jika perlu bantuan.', 'info');
+    if (typeof showToast === 'function') {
+      showToast('Selamat Datang!', 'Mulai buat poster Anda sekarang. Gunakan panduan jika perlu bantuan.', 'info');
+    }
   }, 800);
+
+  // Ekspos fungsi download ke global untuk debugging
+  window.downloadPoster = downloadPoster;
 
 })();
