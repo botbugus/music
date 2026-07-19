@@ -1,4 +1,11 @@
 <?php
+// Izinkan semua metode HTTP
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 session_start();
 include 'config.php';
 
