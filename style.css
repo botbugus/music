@@ -1009,16 +1009,14 @@ body.focus-mode #poster {
   background-repeat: no-repeat;
   width: 700px;
   height: 840px;
-  max-width: none !important;
-  max-height: none !important;
-  aspect-ratio: auto !important;
-  transition: width 0.05s ease, height 0.05s ease;
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding: 36px 32px;
+  transition: width 0.15s ease, height 0.15s ease, background 0.3s ease;
   flex-shrink: 0;
 }
 
@@ -1423,16 +1421,9 @@ body.light-mode .toast-close:hover {
   }
 
   .fitur-page .main-area {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 30px;
-  background: #0a0a16;
-  overflow: auto;
-  transition: background 0.3s ease, padding 0.3s ease;
-  min-height: 500px;
-}
+    padding: 20px;
+    min-height: 400px;
+  }
 
   #poster {
     width: 100% !important;
